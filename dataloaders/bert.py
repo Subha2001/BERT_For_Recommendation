@@ -46,7 +46,18 @@ class BertDataloader(AbstractDataloader):
         return dataloader
 
     def _get_train_dataset(self):
-        dataset = BertTrainDataset(self.train, self.max_len, self.mask_prob, self.CLOZE_MASK_TOKEN, self.item_count, self.rng)
+        # sid2genre should be available in self or constructed from dataset
+        sid2genre = getattr(self, 'sid2genre', None)
+        if sid2genre is None:
+            if hasattr(self, 'dataset') and hasattr(self.dataset, 'sid2genre'):
+                sid2genre = self.dataset.sid2genre
+            else:
+                # fallback: create a dummy mapping (all genres 0)
+                all_sids = set()
+                for user_seq in self.train.values():
+                    all_sids.update(user_seq)
+                sid2genre = {sid: 0 for sid in all_sids}
+        dataset = BertTrainDataset(self.train, sid2genre, self.max_len, self.mask_prob, self.CLOZE_MASK_TOKEN, self.item_count, self.rng)
         return dataset
 
     def _get_val_loader(self):
@@ -64,13 +75,24 @@ class BertDataloader(AbstractDataloader):
 
     def _get_eval_dataset(self, mode):
         answers = self.val if mode == 'val' else self.test
-        dataset = BertEvalDataset(self.train, answers, self.max_len, self.CLOZE_MASK_TOKEN, self.test_negative_samples)
+        sid2genre = getattr(self, 'sid2genre', None)
+        if sid2genre is None:
+            if hasattr(self, 'dataset') and hasattr(self.dataset, 'sid2genre'):
+                sid2genre = self.dataset.sid2genre
+            else:
+                # fallback: create a dummy mapping (all genres 0)
+                all_sids = set()
+                for user_seq in self.train.values():
+                    all_sids.update(user_seq)
+                sid2genre = {sid: 0 for sid in all_sids}
+        dataset = BertEvalDataset(self.train, sid2genre, answers, self.max_len, self.CLOZE_MASK_TOKEN, self.test_negative_samples)
         return dataset
 
 
 class BertTrainDataset(data_utils.Dataset):
-    def __init__(self, u2seq, max_len, mask_prob, mask_token, num_items, rng):
+    def __init__(self, u2seq, sid2genre, max_len, mask_prob, mask_token, num_items, rng):
         self.u2seq = u2seq
+        self.sid2genre = sid2genre  # Added newly
         self.users = sorted(self.u2seq.keys())
         self.max_len = max_len
         self.mask_prob = mask_prob
@@ -84,6 +106,7 @@ class BertTrainDataset(data_utils.Dataset):
     def __getitem__(self, index):
         user = self.users[index]
         seq = self._getseq(user)
+        genres = [self.sid2genre.get(s, 0) for s in seq] # Added newly
 
         tokens = []
         labels = []
@@ -120,8 +143,9 @@ class BertTrainDataset(data_utils.Dataset):
 
 
 class BertEvalDataset(data_utils.Dataset):
-    def __init__(self, u2seq, u2answer, max_len, mask_token, negative_samples):
+    def __init__(self, u2seq, sid2genre, u2answer, max_len, mask_token, negative_samples):
         self.u2seq = u2seq
+        self.sid2genre = sid2genre # Added newly
         self.users = sorted(self.u2seq.keys())
         self.u2answer = u2answer
         self.max_len = max_len
@@ -134,6 +158,7 @@ class BertEvalDataset(data_utils.Dataset):
     def __getitem__(self, index):
         user = self.users[index]
         seq = self.u2seq[user]
+        genres = [self.sid2genre.get(s, 0) for s in seq] # Added newly
         answer = self.u2answer[user]
         negs = self.negative_samples[user]
 

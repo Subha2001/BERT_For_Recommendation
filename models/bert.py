@@ -13,7 +13,8 @@ class BERTModel(BaseModel):
     @classmethod
     def code(cls):
         return 'bert'
-
-    def forward(self, x):
-        x = self.bert(x)
+    
+    #  Updated newly
+    def forward(self, x, genre=None):
+        x = self.bert(x, genre)
         return self.out(x)

@@ -20,19 +20,22 @@ class BERT(nn.Module):
         hidden = args.bert_hidden_units
         self.hidden = hidden
         dropout = args.bert_dropout
+        num_genres = getattr(args, 'num_genres', None)  # Added newly
 
         # embedding for BERT, sum of positional, segment, token embeddings
-        self.embedding = BERTEmbedding(vocab_size=vocab_size, embed_size=self.hidden, max_len=max_len, dropout=dropout)
+        self.embedding = BERTEmbedding(vocab_size=vocab_size, embed_size=self.hidden, max_len=max_len, dropout=dropout,
+                                      num_genres=num_genres)  # Updated newly
 
         # multi-layers transformer blocks, deep network
         self.transformer_blocks = nn.ModuleList(
             [TransformerBlock(hidden, heads, hidden * 4, dropout) for _ in range(n_layers)])
 
-    def forward(self, x):
+    # Updated newly
+    def forward(self, x, genre=None):
         mask = (x > 0).unsqueeze(1).repeat(1, x.size(1), 1).unsqueeze(1)
 
         # embedding the indexed sequence to sequence of vectors
-        x = self.embedding(x)
+        x = self.embedding(x, genre) # Updated newly
 
         # running over multiple transformer blocks
         for transformer in self.transformer_blocks:

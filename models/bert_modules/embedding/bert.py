@@ -13,7 +13,7 @@ class BERTEmbedding(nn.Module):
         sum of all these features are output of BERTEmbedding
     """
 
-    def __init__(self, vocab_size, embed_size, max_len, dropout=0.1):
+    def __init__(self, vocab_size, embed_size, max_len, dropout=0.1, num_genres=None):
         """
         :param vocab_size: total vocab size
         :param embed_size: embedding size of token embedding
@@ -25,7 +25,17 @@ class BERTEmbedding(nn.Module):
         # self.segment = SegmentEmbedding(embed_size=self.token.embedding_dim)
         self.dropout = nn.Dropout(p=dropout)
         self.embed_size = embed_size
-
-    def forward(self, sequence):
-        x = self.token(sequence) + self.position(sequence)  # + self.segment(segment_label)
+        # Added newly for genre embedding
+        # num_genres: number of genres, if None, genre embedding is not used
+        # genre embedding is used to add genre information to the sequence
+        if num_genres is not None:
+            self.genre = nn.Embedding(num_genres, embed_size, padding_idx=0)
+        else:
+            self.genre = None
+        
+    # Updated newly
+    def forward(self, sequence, genre=None):
+        x = self.token(sequence) + self.position(sequence)
+        if self.genre is not None and genre is not None:
+            x = x + self.genre(genre)
         return self.dropout(x)

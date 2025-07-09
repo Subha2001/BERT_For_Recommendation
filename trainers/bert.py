@@ -23,19 +23,27 @@ class BERTTrainer(AbstractTrainer):
         pass
 
     def calculate_loss(self, batch):
-        seqs, labels = batch
-        logits = self.model(seqs)  # B x T x V
-
+        # Support genre input: batch = (seqs, labels, genres) or (seqs, labels)
+        if len(batch) == 3:
+            seqs, labels, genres = batch # Updated newly
+            logits = self.model(seqs, genres)  # B x T x V
+        else:
+            seqs, labels = batch
+            logits = self.model(seqs)
         logits = logits.view(-1, logits.size(-1))  # (B*T) x V
         labels = labels.view(-1)  # B*T
         loss = self.ce(logits, labels)
         return loss
 
     def calculate_metrics(self, batch):
-        seqs, candidates, labels = batch
-        scores = self.model(seqs)  # B x T x V
+        # Support genre input: batch = (seqs, candidates, labels, genres) or (seqs, candidates, labels)
+        if len(batch) == 4:
+            seqs, candidates, labels, genres = batch # Updated newly
+            scores = self.model(seqs, genres)  # B x T x V
+        else:
+            seqs, candidates, labels = batch
+            scores = self.model(seqs)
         scores = scores[:, -1, :]  # B x V
         scores = scores.gather(1, candidates)  # B x C
-
         metrics = recalls_and_ndcgs_for_ks(scores, labels, self.metric_ks)
         return metrics
