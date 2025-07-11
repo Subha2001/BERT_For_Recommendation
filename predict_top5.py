@@ -53,6 +53,9 @@ def load_model(model_path):
         args.bert_num_blocks = 2
     if not hasattr(args, 'bert_num_heads') or args.bert_num_heads is None:
         args.bert_num_heads = 4
+    # Ensure num_genres is set
+    if not hasattr(args, 'num_genres') or args.num_genres is None:
+        args.num_genres = 19  # 18 genres + 1 for padding (0)
     model = model_factory(args)
     model.eval()
     state_dict = torch.load(model_path, map_location='cpu', weights_only=True)
