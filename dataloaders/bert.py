@@ -129,13 +129,12 @@ class BertTrainDataset(data_utils.Dataset):
 
         tokens = tokens[-self.max_len:]
         labels = labels[-self.max_len:]
-        genres = genres[-self.max_len:] # Added newly
+        genres = genres[-self.max_len:]
 
-        mask_len = self.max_len - len(tokens)
-
-        tokens = [0] * mask_len + tokens
-        labels = [0] * mask_len + labels
-        genres = [0] * mask_len + genres
+        pad_len = self.max_len - len(tokens)
+        tokens = [0] * pad_len + tokens
+        labels = [0] * pad_len + labels
+        genres = [0] * pad_len + genres
 
         return torch.LongTensor(tokens), torch.LongTensor(labels), torch.LongTensor(genres)
 
@@ -169,6 +168,7 @@ class BertEvalDataset(data_utils.Dataset):
 
         seq = seq + [self.mask_token]
         seq = seq[-self.max_len:]
+        genres = genres[-self.max_len:]
         padding_len = self.max_len - len(seq)
         seq = [0] * padding_len + seq
         genres = [0] * padding_len + genres
