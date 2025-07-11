@@ -1,8 +1,11 @@
 import torch
+import sys
 import os
 from models import model_factory
 from options import args
 import numpy as np
+
+TF_ENABLE_ONEDNN_OPTS=0 # Disable oneDNN optimizations for reproducibility
 
 # Genre name to ID mapping (1-based, as per MovieLens 1M)
 genre_name_to_id = {
@@ -90,6 +93,8 @@ def predict_user_genre_top5(user_id, movie_id, interaction_seq, genre, model_pat
 def predict_top5_per_genre(user_id, interaction_seq, genre_list, model_path='downloaded_model/best_acc_model.pth', genre_id_to_name=None):
     # Map genre names to IDs if needed
     genre_ids = [genre_name_to_id[g] if isinstance(g, str) else g for g in genre_list]
+    if genre_id_to_name is None:
+        genre_id_to_name = {v: k for k, v in genre_name_to_id.items()}
     model = load_model(model_path)
     max_len = args.bert_max_len if hasattr(args, 'bert_max_len') else 100
     pad_len = max_len - len(interaction_seq)
@@ -108,14 +113,59 @@ def predict_top5_per_genre(user_id, interaction_seq, genre_list, model_path='dow
             top5_movie_ids = top5_indices[0].cpu().numpy().tolist()
         genre_to_top5[genre_id] = top5_movie_ids
 
+    # Dynamic top-1 multi-genre column based on user's top 5 genres
+    from itertools import combinations
+    from collections import Counter
+    sid2genre = None
+    if hasattr(model, 'sid2genre'):
+        sid2genre = model.sid2genre
+    else:
+        sid2genre_path = 'Data/ml-1m/sid2genre.npy'
+        if os.path.exists(sid2genre_path):
+            sid2genre = np.load(sid2genre_path, allow_pickle=True).item()
+    # Find all pairs from top 5 genres
+    genre_pairs = list(combinations(genre_ids, 2))
+    pair_count = Counter()
+    if sid2genre is not None:
+        # Count how many movies exist for each pair
+        for m, genres_of_m in sid2genre.items():
+            if isinstance(genres_of_m, (list, tuple)):
+                for pair in genre_pairs:
+                    if pair[0] in genres_of_m and pair[1] in genres_of_m:
+                        pair_count[pair] += 1
+        # Pick the most common pair (with most movies)
+        if pair_count:
+            best_pair = pair_count.most_common(1)[0][0]
+        else:
+            best_pair = genre_pairs[0] if genre_pairs else (None, None)
+        multi_pair_movies = []
+        multi_pair_name = f"{genre_id_to_name.get(best_pair[0], str(best_pair[0]))} | {genre_id_to_name.get(best_pair[1], str(best_pair[1]))}"
+        if best_pair[0] is not None and best_pair[1] is not None:
+            # Get model scores for all movies
+            seq_tensor = torch.LongTensor([padded_seq])
+            genre_tensor = torch.LongTensor([[best_pair[0]] * max_len])
+            with torch.no_grad():
+                logits = model(seq_tensor, genre_tensor)
+                scores = logits[:, -1, :].squeeze().cpu().numpy()
+            # Filter movies with both genres in the best pair
+            candidate_movies = [m for m, genres_of_m in sid2genre.items() if isinstance(genres_of_m, (list, tuple)) and best_pair[0] in genres_of_m and best_pair[1] in genres_of_m]
+            # Sort by model score
+            candidate_scores = [(m, scores[m]) for m in candidate_movies if m < len(scores)]
+            candidate_scores.sort(key=lambda x: x[1], reverse=True)
+            multi_pair_movies = [m for m, _ in candidate_scores[:5]]
+            while len(multi_pair_movies) < 5:
+                multi_pair_movies.append(0)
+        else:
+            multi_pair_movies = [0]*5
+    else:
+        multi_pair_movies = [0]*5
+        multi_pair_name = "Multi-Genre"
+
     # Print as table
-    if genre_id_to_name is None:
-        genre_id_to_name = {v: k for k, v in genre_name_to_id.items()}
-    header = ["User ID"] + [genre_id_to_name.get(gid, str(gid)) for gid in genre_ids]
+    header = ["User ID"] + [genre_id_to_name.get(gid, str(gid)) for gid in genre_ids] + [multi_pair_name]
     print("\t".join(header))
-    row = [str(user_id)] + [", ".join(map(str, genre_to_top5[gid])) for gid in genre_ids]
+    row = [str(user_id)] + [", ".join(map(str, genre_to_top5[gid])) for gid in genre_ids] + [", ".join(map(str, multi_pair_movies))]
     print("\t".join(row))
-    return user_id, genre_to_top5
 
 def predict_top5_genres(user_id, interaction_seq, model_path='downloaded_model/best_acc_model.pth'):
     """
@@ -143,7 +193,7 @@ def predict_top5_genres(user_id, interaction_seq, model_path='downloaded_model/b
 if __name__ == "__main__":
     # Example usage with genre names
     user_id = 1
-    movie_id = 15
+    movie_id = 6
     interaction_seq = [15, 25, 35, 45, 55]  # Example sequence
     genre = ['Action', 'Sci-Fi', 'Thriller', 'Comedy', 'Action']  # Example genre sequence (as names)
     result = predict_user_genre_top5(user_id, movie_id, interaction_seq, genre)
