@@ -135,7 +135,7 @@ class BertTrainDataset(data_utils.Dataset):
         tokens = [0] * mask_len + tokens
         labels = [0] * mask_len + labels
 
-        return torch.LongTensor(tokens), torch.LongTensor(labels)
+        return torch.LongTensor(tokens), torch.LongTensor(labels), torch.LongTensor(genres) # Updated newly to include genres
 
     def _getseq(self, user):
         return self.u2seq[user]
@@ -170,5 +170,6 @@ class BertEvalDataset(data_utils.Dataset):
         padding_len = self.max_len - len(seq)
         seq = [0] * padding_len + seq
 
-        return torch.LongTensor(seq), torch.LongTensor(candidates), torch.LongTensor(labels)
+        return torch.LongTensor(seq), torch.LongTensor(candidates), torch.LongTensor(labels), torch.LongTensor(genres) # Updated newly to include genres
+        # Return sequence, candidates, labels, and genres
 
