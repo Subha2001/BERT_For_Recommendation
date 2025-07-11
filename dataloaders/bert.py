@@ -106,7 +106,7 @@ class BertTrainDataset(data_utils.Dataset):
     def __getitem__(self, index):
         user = self.users[index]
         seq = self._getseq(user)
-        genres = [self.sid2genre.get(s, 0) for s in seq] # Added newly
+        genres = [self.sid2genre.get(s, 0) for s in seq]
 
         tokens = []
         labels = []
@@ -114,28 +114,26 @@ class BertTrainDataset(data_utils.Dataset):
             prob = self.rng.random()
             if prob < self.mask_prob:
                 prob /= self.mask_prob
-
                 if prob < 0.8:
                     tokens.append(self.mask_token)
                 elif prob < 0.9:
                     tokens.append(self.rng.randint(1, self.num_items))
                 else:
                     tokens.append(s)
-
                 labels.append(s)
             else:
                 tokens.append(s)
                 labels.append(0)
 
+        # Truncate all to max_len
         tokens = tokens[-self.max_len:]
         labels = labels[-self.max_len:]
         genres = genres[-self.max_len:]
-
+        # Pad all to max_len
         pad_len = self.max_len - len(tokens)
         tokens = [0] * pad_len + tokens
         labels = [0] * pad_len + labels
         genres = [0] * pad_len + genres
-
         return torch.LongTensor(tokens), torch.LongTensor(labels), torch.LongTensor(genres)
 
     def _getseq(self, user):
@@ -159,20 +157,19 @@ class BertEvalDataset(data_utils.Dataset):
     def __getitem__(self, index):
         user = self.users[index]
         seq = self.u2seq[user]
-        genres = [self.sid2genre.get(s, 0) for s in seq] # Added newly
+        genres = [self.sid2genre.get(s, 0) for s in seq]
         answer = self.u2answer[user]
         negs = self.negative_samples[user]
-
         candidates = answer + negs
         labels = [1] * len(answer) + [0] * len(negs)
-
         seq = seq + [self.mask_token]
+        genres = genres + [0]  # genre for mask token
+        # Truncate all to max_len
         seq = seq[-self.max_len:]
         genres = genres[-self.max_len:]
+        # Pad all to max_len
         padding_len = self.max_len - len(seq)
         seq = [0] * padding_len + seq
         genres = [0] * padding_len + genres
-
-        return torch.LongTensor(seq), torch.LongTensor(candidates), torch.LongTensor(labels), torch.LongTensor(genres) # Updated newly to include genres
-        # Return sequence, candidates, labels, and genres
+        return torch.LongTensor(seq), torch.LongTensor(candidates), torch.LongTensor(labels), torch.LongTensor(genres)
 
