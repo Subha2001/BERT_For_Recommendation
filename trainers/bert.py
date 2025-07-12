@@ -51,55 +51,35 @@ class BERTTrainer(AbstractTrainer):
             seqs, candidates, labels = batch
             genres = None
             scores = self.model(seqs)
-        print('DEBUG: scores shape:', scores.shape)
-        print('DEBUG: labels shape:', labels.shape)
-        if genres is not None:
-            print('DEBUG: genres shape:', genres.shape)
-            print('DEBUG: unique genres:', np.unique(genres.cpu().numpy()))
+        # Remove debug prints for cleaner output
         scores = scores[:, -1, :]  # B x V
         scores = scores.gather(1, candidates)  # B x C
 
-        # Save original scores and labels for overall metrics
-        scores_2d = scores
-        labels_2d = labels
-
-        # Flatten only for genre filtering
+        # Calculate genre-based metrics
         genre_metrics = {}
         single_genres = ['Action', 'Sci-Fi', 'Thriller', 'Comedy', 'Suspense']
         if genres is not None:
-            flat_scores = scores_2d.reshape(-1)
-            flat_labels = labels_2d.reshape(-1)
+            flat_scores = scores.reshape(-1)
+            flat_labels = labels.reshape(-1)
             flat_genres = genres.reshape(-1).cpu().numpy()
             # Only compute genre metrics if shapes match
             if flat_genres.shape[0] == flat_scores.shape[0] == flat_labels.shape[0]:
                 for genre_name in single_genres:
                     genre_id = self.args.genre2id[genre_name] if hasattr(self.args, 'genre2id') else single_genres.index(genre_name)
                     idx = (flat_genres == genre_id)
-                    print(f'DEBUG: genre {genre_name} (id {genre_id}) mask count:', idx.sum())
                     if idx.sum() > 0:
                         genre_scores = flat_scores[idx]
                         genre_labels = flat_labels[idx]
-                        # Reshape to (N, 1) for metric functions
                         genre_metrics[genre_name] = recalls_and_ndcgs_for_ks(genre_scores.unsqueeze(1), genre_labels.unsqueeze(1), self.metric_ks)
-                    else:
-                        genre_metrics[genre_name] = None
                 # Multi-genre: user-defined list of genre names
                 if multi_genre:
                     multi_ids = [self.args.genre2id[g] if hasattr(self.args, 'genre2id') else single_genres.index(g) for g in multi_genre]
                     idx = [g in multi_ids for g in flat_genres]
-                    print(f'DEBUG: multi-genre {multi_genre} mask count:', np.sum(idx))
                     idx = torch.tensor(idx)
                     if idx.sum() > 0:
                         multi_scores = flat_scores[idx]
                         multi_labels = flat_labels[idx]
                         genre_metrics['Multi-Genre'] = recalls_and_ndcgs_for_ks(multi_scores.unsqueeze(1), multi_labels.unsqueeze(1), self.metric_ks)
-                    else:
-                        genre_metrics['Multi-Genre'] = None
-            else:
-                # Shapes do not match, skip genre metrics
-                for genre_name in single_genres:
-                    genre_metrics[genre_name] = None
-                genre_metrics['Multi-Genre'] = None
-        # Overall metrics
-        genre_metrics['Overall'] = recalls_and_ndcgs_for_ks(scores_2d, labels_2d, self.metric_ks)
-        return genre_metrics
+        # Only return non-empty genre metrics
+        filtered_metrics = {k: v for k, v in genre_metrics.items() if v is not None}
+        return filtered_metrics
