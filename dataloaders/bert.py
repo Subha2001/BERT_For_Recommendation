@@ -171,11 +171,5 @@ class BertEvalDataset(data_utils.Dataset):
         candidate_genres = [self.sid2genre.get(s, 0) for s in candidates]
         # Get genres for sequence
         sequence_genres = [self.sid2genre.get(s, 0) for s in seq]
-        # Debug: check alignment and genre distribution
-        if not (len(candidates) == len(labels) == len(candidate_genres)):
-            print(f"DEBUG: candidates={len(candidates)}, labels={len(labels)}, candidate_genres={len(candidate_genres)}")
-        # Print genre distribution for candidates
-        import numpy as np
-        unique, counts = np.unique(candidate_genres, return_counts=True)
-        print(f"DEBUG: candidate_genres distribution: {dict(zip(unique, counts))}")
+        # ...existing code...
         return torch.LongTensor(seq), torch.LongTensor(candidates), torch.LongTensor(labels), torch.LongTensor(sequence_genres), torch.LongTensor(candidate_genres)
