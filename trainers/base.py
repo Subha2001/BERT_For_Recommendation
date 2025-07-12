@@ -16,13 +16,9 @@ from pathlib import Path
 class AbstractTrainer(metaclass=ABCMeta):
     def __init__(self, args, model, train_loader, val_loader, test_loader, export_root):
         self.args = args
-        # Set device to CUDA if available, else CPU
-        if hasattr(args, 'device') and args.device:
-            self.device = torch.device(args.device if torch.cuda.is_available() and args.device.startswith('cuda') else 'cpu')
-        else:
-            self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = args.device
         self.model = model.to(self.device)
-        self.is_parallel = args.num_gpu > 1 and self.device.type == 'cuda'
+        self.is_parallel = args.num_gpu > 1
         if self.is_parallel:
             self.model = nn.DataParallel(self.model)
 
@@ -131,21 +127,11 @@ class AbstractTrainer(metaclass=ABCMeta):
 
                 for k, v in metrics.items():
                     average_meter_set.update(k, v)
-                # Show latest nonzero metric values in progress bar
                 description_metrics = ['NDCG@%d' % k for k in self.metric_ks[:3]] +\
                                       ['Recall@%d' % k for k in self.metric_ks[:3]]
-                # Store previous nonzero values
-                if not hasattr(self, '_prev_metrics'):
-                    self._prev_metrics = {k: 0.0 for k in description_metrics}
-                current_metrics = []
-                for k in description_metrics:
-                    val = average_meter_set[k].avg
-                    if val != 0:
-                        self._prev_metrics[k] = val
-                    current_metrics.append(self._prev_metrics[k])
                 description = 'Val: ' + ', '.join(s + ' {:.3f}' for s in description_metrics)
                 description = description.replace('NDCG', 'N').replace('Recall', 'R')
-                description = description.format(*current_metrics)
+                description = description.format(*(average_meter_set[k].avg for k in description_metrics))
                 tqdm_dataloader.set_description(description)
 
             log_data = {
@@ -175,28 +161,17 @@ class AbstractTrainer(metaclass=ABCMeta):
 
                 for k, v in metrics.items():
                     average_meter_set.update(k, v)
-                # Show latest nonzero metric values in progress bar
                 description_metrics = ['NDCG@%d' % k for k in self.metric_ks[:3]] +\
                                       ['Recall@%d' % k for k in self.metric_ks[:3]]
-                if not hasattr(self, '_prev_metrics_test'):
-                    self._prev_metrics_test = {k: 0.0 for k in description_metrics}
-                current_metrics = []
-                for k in description_metrics:
-                    val = average_meter_set[k].avg
-                    if val != 0:
-                        self._prev_metrics_test[k] = val
-                    current_metrics.append(self._prev_metrics_test[k])
                 description = 'Val: ' + ', '.join(s + ' {:.3f}' for s in description_metrics)
                 description = description.replace('NDCG', 'N').replace('Recall', 'R')
-                description = description.format(*current_metrics)
+                description = description.format(*(average_meter_set[k].avg for k in description_metrics))
                 tqdm_dataloader.set_description(description)
 
             average_metrics = average_meter_set.averages()
             with open(os.path.join(self.export_root, 'logs', 'test_metrics.json'), 'w') as f:
                 json.dump(average_metrics, f, indent=4)
-            # Only print nonzero metrics in summary
-            filtered_metrics = {k: v for k, v in average_metrics.items() if v != 0}
-            print(filtered_metrics)
+            print(average_metrics)
 
     def _create_optimizer(self):
         args = self.args
