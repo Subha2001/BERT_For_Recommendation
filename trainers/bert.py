@@ -85,42 +85,45 @@ class BERTTrainer(AbstractTrainer):
 
             # ...existing code...
 
-            # Identify multi-genre: items with more than one genre (if genres is 2D and sum along dim=1 > 1)
-            multi_genre_scores = []
-            multi_genre_labels = []
-            if genres.dim() == 2:
-                for idx in range(scores.size(0)):
-                    # Count nonzero genres for this item
-                    genre_count = (genres[idx] > 0).sum().item()
-                    if genre_count > 1:
-                        multi_genre_scores.append(scores[idx])
-                        multi_genre_labels.append(labels[idx])
+            # Identify multi-genre (assume it contains '|' in the genre name)
+            multi_genre = None
+            for g in genre_scores_dict:
+                if isinstance(g, str) and '|' in g:
+                    multi_genre = g
+                    break
 
             # ...existing code...
 
             metrics_list = []
-            # Compute Recall@1 for top 5 single genres
+            # Compute Recall@5 for top 5 single genres
             for genre in top_5_genres:
                 score_len = len(genre_scores_dict.get(genre, []))
                 label_len = len(genre_labels_dict.get(genre, []))
                 if score_len == 0 or label_len == 0:
+                    # ...existing code...
                     metrics_list.append(0.0)
                     continue
                 m = per_genre_recalls_and_ndcgs(
                     {genre: torch.stack(genre_scores_dict[genre], dim=0)},
                     {genre: torch.stack(genre_labels_dict[genre], dim=0)},
-                    [1]
+                    self.metric_ks
                 )
-                metrics_list.append(m[genre].get('Recall@1', 0.0))
+                metrics_list.append(m[genre].get('Recall@5', 0.0))
 
-            # Compute Recall@1 for multi-genre
-            if len(multi_genre_scores) > 0 and len(multi_genre_labels) > 0:
-                m = per_genre_recalls_and_ndcgs(
-                    {'multi_genre': torch.stack(multi_genre_scores, dim=0)},
-                    {'multi_genre': torch.stack(multi_genre_labels, dim=0)},
-                    [1]
-                )
-                metrics_list.append(m['multi_genre'].get('Recall@1', 0.0))
+            # Compute Recall@5 for multi-genre
+            if multi_genre is not None:
+                score_len = len(genre_scores_dict.get(multi_genre, []))
+                label_len = len(genre_labels_dict.get(multi_genre, []))
+                if score_len == 0 or label_len == 0:
+                    # ...existing code...
+                    metrics_list.append(0.0)
+                else:
+                    m = per_genre_recalls_and_ndcgs(
+                        {multi_genre: torch.stack(genre_scores_dict[multi_genre], dim=0)},
+                        {multi_genre: torch.stack(genre_labels_dict[multi_genre], dim=0)},
+                        self.metric_ks
+                    )
+                    metrics_list.append(m[multi_genre].get('Recall@5', 0.0))
             else:
                 metrics_list.append(0.0)  # If no multi-genre found
 
@@ -128,12 +131,17 @@ class BERTTrainer(AbstractTrainer):
             while len(metrics_list) < 6:
                 metrics_list.append(0.0)
 
-            # Return only Recall@1 metrics for genres and NDCG@10 for logger compatibility
-            metrics_dict = {f'Recall@1_genre{i+1}': (0.0 if isinstance(score, float) and (score != score) else score) for i, score in enumerate(metrics_list[:-1])}
-            metrics_dict['Recall@1_multigenre'] = (0.0 if isinstance(metrics_list[-1], float) and (metrics_list[-1] != metrics_list[-1]) else metrics_list[-1])
-            # Add overall NDCG@10
-            overall_metrics = recalls_and_ndcgs_for_ks(scores, labels, [10])
-            metrics_dict['NDCG@10'] = overall_metrics.get('NDCG@10', 0.0)
+            # Return as dict for base trainer compatibility
+            # Replace NaN values with 0.0 for genre metrics
+            metrics_dict = {f'Recall@5_genre{i+1}': (0.0 if isinstance(score, float) and (score != score) else score) for i, score in enumerate(metrics_list[:-1])}
+            metrics_dict['Recall@5_multigenre'] = (0.0 if isinstance(metrics_list[-1], float) and (metrics_list[-1] != metrics_list[-1]) else metrics_list[-1])
+            # Also add overall metrics for logger compatibility
+            overall_metrics = recalls_and_ndcgs_for_ks(scores, labels, self.metric_ks)
+            metrics_dict.update(overall_metrics)
+            # Ensure all expected keys are present for logger compatibility
+            for k in self.metric_ks:
+                metrics_dict.setdefault(f'NDCG@{k}', 0.0)
+                metrics_dict.setdefault(f'Recall@{k}', 0.0)
             return metrics_dict
         else:
             seqs, candidates, labels = batch
