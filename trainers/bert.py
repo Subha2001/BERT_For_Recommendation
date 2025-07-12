@@ -48,10 +48,13 @@ class BERTTrainer(AbstractTrainer):
         scores = scores[:, -1, :]  # B x V
         scores = scores.gather(1, candidates)  # B x C
 
-        # Define single genres (these should match your dataset's genre encoding)
-        single_genres = ['Action', 'Sci-Fi', 'Thriller', 'Comedy', 'Suspense']
+        # Flatten all arrays to 1D for correct masking
+        scores = scores.reshape(-1)
+        labels = labels.reshape(-1)
         genre_metrics = {}
+        single_genres = ['Action', 'Sci-Fi', 'Thriller', 'Comedy', 'Suspense']
         if genres is not None:
+            genres = genres.reshape(-1)
             genres = genres.cpu().numpy()
             for genre_name in single_genres:
                 genre_id = self.args.genre2id[genre_name] if hasattr(self.args, 'genre2id') else single_genres.index(genre_name)
