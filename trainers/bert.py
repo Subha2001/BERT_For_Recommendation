@@ -52,6 +52,14 @@ class BERTTrainer(AbstractTrainer):
             genres = genres.to(self.device)
             scores = self.model(seqs, genres)  # B x T x V
             scores = scores[:, -1, :]  # B x V
+            # Gather scores for candidates to match labels shape
+            if (candidates < 0).any() or (candidates >= scores.size(1)).any():
+                raise ValueError(
+                    f"Invalid candidate indices detected! "
+                    f"Min: {candidates.min().item()}, Max: {candidates.max().item()}, "
+                    f"Scores dim size: {scores.size(1)}"
+                )
+            scores = scores.gather(1, candidates)  # B x C
             # genres: B x C (genre for each candidate)
             # labels: B x C (ground truth for each candidate)
             # Group scores and labels by genre (robust flattening)
