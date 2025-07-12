@@ -131,11 +131,21 @@ class AbstractTrainer(metaclass=ABCMeta):
 
                 for k, v in metrics.items():
                     average_meter_set.update(k, v)
+                # Show latest nonzero metric values in progress bar
                 description_metrics = ['NDCG@%d' % k for k in self.metric_ks[:3]] +\
                                       ['Recall@%d' % k for k in self.metric_ks[:3]]
+                # Store previous nonzero values
+                if not hasattr(self, '_prev_metrics'):
+                    self._prev_metrics = {k: 0.0 for k in description_metrics}
+                current_metrics = []
+                for k in description_metrics:
+                    val = average_meter_set[k].avg
+                    if val != 0:
+                        self._prev_metrics[k] = val
+                    current_metrics.append(self._prev_metrics[k])
                 description = 'Val: ' + ', '.join(s + ' {:.3f}' for s in description_metrics)
                 description = description.replace('NDCG', 'N').replace('Recall', 'R')
-                description = description.format(*(average_meter_set[k].avg for k in description_metrics))
+                description = description.format(*current_metrics)
                 tqdm_dataloader.set_description(description)
 
             log_data = {
@@ -165,11 +175,20 @@ class AbstractTrainer(metaclass=ABCMeta):
 
                 for k, v in metrics.items():
                     average_meter_set.update(k, v)
+                # Show latest nonzero metric values in progress bar
                 description_metrics = ['NDCG@%d' % k for k in self.metric_ks[:3]] +\
                                       ['Recall@%d' % k for k in self.metric_ks[:3]]
+                if not hasattr(self, '_prev_metrics_test'):
+                    self._prev_metrics_test = {k: 0.0 for k in description_metrics}
+                current_metrics = []
+                for k in description_metrics:
+                    val = average_meter_set[k].avg
+                    if val != 0:
+                        self._prev_metrics_test[k] = val
+                    current_metrics.append(self._prev_metrics_test[k])
                 description = 'Val: ' + ', '.join(s + ' {:.3f}' for s in description_metrics)
                 description = description.replace('NDCG', 'N').replace('Recall', 'R')
-                description = description.format(*(average_meter_set[k].avg for k in description_metrics))
+                description = description.format(*current_metrics)
                 tqdm_dataloader.set_description(description)
 
             average_metrics = average_meter_set.averages()
