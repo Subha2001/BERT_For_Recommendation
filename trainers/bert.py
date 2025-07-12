@@ -53,6 +53,15 @@ class BERTTrainer(AbstractTrainer):
             else:
                 flat_genres = torch.tensor(genres).flatten()
 
+            genre_scores_dict = {}
+            genre_labels_dict = {}
+
+            # Debug: print genre distribution and selection
+            print(f"Batch genre keys: {list(genre_scores_dict.keys())}")
+            # top_5_genres is defined later, so move this print after its definition
+            # print(f"Top 5 genres selected: {top_5_genres}")
+            print(f"Sample flat_genres: {flat_genres[:20].tolist()}")
+
             # Truncate all arrays to the shortest length to avoid shape mismatch
             min_len = min(flat_scores.shape[0], flat_labels.shape[0], flat_genres.shape[0])
             flat_scores = flat_scores[:min_len]
@@ -67,17 +76,20 @@ class BERTTrainer(AbstractTrainer):
                     genre_scores_dict[genre] = []
                     genre_labels_dict[genre] = []
                 genre_scores_dict[genre].append(flat_scores[idx].unsqueeze(0))
-                genre_labels_dict[genre].append(flat_labels[idx].unsqueeze(0))
-            # Stack tensors for each genre
-            for genre in genre_scores_dict:
-                genre_scores_dict[genre] = torch.cat(genre_scores_dict[genre], dim=0).unsqueeze(0)
-                genre_labels_dict[genre] = torch.cat(genre_labels_dict[genre], dim=0).unsqueeze(0)
             # Identify top 5 single genres by count
             genre_counts = {g: len(genre_scores_dict[g][0]) for g in genre_scores_dict}
             top_5_genres = sorted(genre_counts, key=genre_counts.get, reverse=True)[:5]
 
+            # Debug: print top 5 genres selected
+            print(f"Top 5 genres selected: {top_5_genres}")
+
             # Identify multi-genre (assume it contains '|' in the genre name)
             multi_genre = None
+            for g in genre_scores_dict:
+                if isinstance(g, str) and '|' in g:
+                    multi_genre = g
+                    break
+                # If genre is int or other type, you may need to adjust this logic
             for g in genre_scores_dict:
                 if isinstance(g, str) and '|' in g:
                     multi_genre = g
