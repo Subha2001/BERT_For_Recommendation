@@ -34,7 +34,7 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.title(":clapper: BERT Movie Recommendation Demo")
+st.title(":clapper: BERT Movie Recommendation")
 
 
 st.markdown("""
@@ -58,11 +58,11 @@ label, .stTextInput label, .stNumberInput label, .stSelectbox label {
 
 col1, col2 = st.columns(2)
 with col1:
-    user_id = st.number_input("User ID", min_value=1, value=1, step=1, format="%d", key="user_id", label_visibility="visible")
+    user_id = st.number_input("User ID", min_value=1, value=100, step=1, format="%d", key="user_id", label_visibility="visible")
 with col2:
-    movie_id = st.number_input("Movie ID", min_value=1, value=1, step=1, format="%d", key="movie_id", label_visibility="visible")
+    movie_id = st.number_input("Movie ID", min_value=1, value=1000, step=1, format="%d", key="movie_id", label_visibility="visible")
 
-interaction_seq = st.text_input("Interaction Sequence (comma-separated Movie IDs)", value="15,25,35,45,55", key="interaction_seq", label_visibility="visible")
+interaction_seq = st.text_input("Interaction Sequence (comma-separated Movie IDs)", value="9,23,66,188,317", key="interaction_seq", label_visibility="visible")
 
 # Genre dropdowns
 all_genres = list(genre_name_to_id.keys())
