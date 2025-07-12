@@ -38,11 +38,6 @@ class BERTTrainer(AbstractTrainer):
 
     def calculate_metrics(self, batch, multi_genre=None):
         import numpy as np
-        print('DEBUG: scores shape:', scores.shape)
-        print('DEBUG: labels shape:', labels.shape)
-        if genres is not None:
-            print('DEBUG: genres shape:', genres.shape)
-            print('DEBUG: unique genres:', np.unique(genres.cpu().numpy()))
         # batch = (seqs, candidates, labels, genres) or (seqs, candidates, labels)
         if len(batch) == 4:
             seqs, candidates, labels, genres = batch
@@ -51,6 +46,11 @@ class BERTTrainer(AbstractTrainer):
             seqs, candidates, labels = batch
             genres = None
             scores = self.model(seqs)
+        print('DEBUG: scores shape:', scores.shape)
+        print('DEBUG: labels shape:', labels.shape)
+        if genres is not None:
+            print('DEBUG: genres shape:', genres.shape)
+            print('DEBUG: unique genres:', np.unique(genres.cpu().numpy()))
         scores = scores[:, -1, :]  # B x V
         scores = scores.gather(1, candidates)  # B x C
 
