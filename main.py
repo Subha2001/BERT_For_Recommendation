@@ -14,7 +14,7 @@ def train():
     dataset = dataset_factory(args)
     # Automatically set num_items and num_genres from dataset
     import pandas as pd
-    ratings_df = pd.read_csv('/kaggle/working/BERT_For_Recommendation/Data/ml-1m/ratings.dat', sep='::', header=None, engine='python')
+    ratings_df = pd.read_csv('BERT_For_Recommendation/Data/ml-1m/ratings.dat', sep='::', header=None, engine='python')
     ratings_df.columns = ['uid', 'sid', 'rating', 'timestamp']
     all_item_ids = set(ratings_df['sid'].unique())
     max_item_id = max(all_item_ids)
