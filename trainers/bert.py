@@ -50,7 +50,13 @@ class BERTTrainer(AbstractTrainer):
             genre_labels_dict = {}
             for i in range(scores.shape[0]):
                 for j in range(scores.shape[1]):
-                    genre = genres[i][j]
+                    # Robust genre indexing
+                    if hasattr(genres, 'ndim') and genres.ndim == 2:
+                        genre = genres[i][j]
+                    elif hasattr(genres, 'ndim') and genres.ndim == 1:
+                        genre = genres[j]
+                    else:
+                        genre = genres[i]
                     if genre not in genre_scores_dict:
                         genre_scores_dict[genre] = []
                         genre_labels_dict[genre] = []
