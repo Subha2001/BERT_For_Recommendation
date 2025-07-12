@@ -16,9 +16,13 @@ from pathlib import Path
 class AbstractTrainer(metaclass=ABCMeta):
     def __init__(self, args, model, train_loader, val_loader, test_loader, export_root):
         self.args = args
-        self.device = args.device
+        # Set device to CUDA if available, else CPU
+        if hasattr(args, 'device') and args.device:
+            self.device = torch.device(args.device if torch.cuda.is_available() and args.device.startswith('cuda') else 'cpu')
+        else:
+            self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.model = model.to(self.device)
-        self.is_parallel = args.num_gpu > 1
+        self.is_parallel = args.num_gpu > 1 and self.device.type == 'cuda'
         if self.is_parallel:
             self.model = nn.DataParallel(self.model)
 
