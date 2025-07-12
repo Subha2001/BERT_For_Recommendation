@@ -107,6 +107,11 @@ class AverageMeterSet(object):
         return self.meters[key]
 
     def update(self, name, value, n=1):
+        # If value is a dict, update each key individually
+        if isinstance(value, dict):
+            for k, v in value.items():
+                self.update(k, v, n)
+            return
         if name not in self.meters:
             self.meters[name] = AverageMeter()
         self.meters[name].update(value, n)
