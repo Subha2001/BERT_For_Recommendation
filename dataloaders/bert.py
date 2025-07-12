@@ -163,13 +163,10 @@ class BertEvalDataset(data_utils.Dataset):
         candidates = answer + negs
         labels = [1] * len(answer) + [0] * len(negs)
         seq = seq + [self.mask_token]
-        genres = genres + [0]  # genre for mask token
         # Truncate all to max_len
         seq = seq[-self.max_len:]
-        genres = genres[-self.max_len:]
-        # Pad all to max_len
         padding_len = self.max_len - len(seq)
         seq = [0] * padding_len + seq
-        genres = [0] * padding_len + genres
-        return torch.LongTensor(seq), torch.LongTensor(candidates), torch.LongTensor(labels), torch.LongTensor(genres)
-
+        # Get genres for each candidate
+        candidate_genres = [self.sid2genre.get(s, 0) for s in candidates]
+        return torch.LongTensor(seq), torch.LongTensor(candidates), torch.LongTensor(labels), torch.LongTensor(candidate_genres)
