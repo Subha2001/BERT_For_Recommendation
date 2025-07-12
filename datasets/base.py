@@ -129,7 +129,7 @@ class AbstractDataset(metaclass=ABCMeta):
         return df
 
     def densify_index(self, df):
-        print('Densifying index')
+        # ...existing code...
         umap = {u: i for i, u in enumerate(set(df['uid']))}
         smap = {s: i for i, s in enumerate(set(df['sid']))}
         df['uid'] = df['uid'].map(umap)

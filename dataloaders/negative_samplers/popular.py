@@ -14,7 +14,7 @@ class PopularNegativeSampler(AbstractNegativeSampler):
         popular_items = self.items_by_popularity()
 
         negative_samples = {}
-        print('Sampling negative items')
+        # ...existing code...
         for user in trange(self.user_count):
             seen = set(self.train[user])
             seen.update(self.val[user])

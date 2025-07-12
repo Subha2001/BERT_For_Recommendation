@@ -16,11 +16,7 @@ class BertDataloader(AbstractDataloader):
 
         # Always use sid2genre from dataset
         self.sid2genre = self.dataset.sid2genre
-        genre_counts = {}
-        for g in self.sid2genre.values():
-            genre_counts[g] = genre_counts.get(g, 0) + 1
-        print(f"[DEBUG] sid2genre unique genres: {list(genre_counts.keys())}")
-        print(f"[DEBUG] sid2genre genre counts: {genre_counts}")
+        # ...existing code...
 
         code = args.train_negative_sampler_code
         train_negative_sampler = negative_sampler_factory(code, self.train, self.val, self.test,
