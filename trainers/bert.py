@@ -58,6 +58,11 @@ class BERTTrainer(AbstractTrainer):
         max_cand = candidates.max().item() if hasattr(candidates, 'max') else None
         min_cand = candidates.min().item() if hasattr(candidates, 'min') else None
         vocab_size = scores.size(1)
+        # If all candidate indices are >= 1, shift to 0-based
+        if min_cand is not None and min_cand > 0:
+            candidates = candidates - 1
+            max_cand = candidates.max().item()
+            min_cand = candidates.min().item()
         if max_cand is not None and (max_cand >= vocab_size or min_cand < 0):
             print(f"[DEBUG] Candidate indices out of bounds: min={min_cand}, max={max_cand}, vocab_size={vocab_size}")
             print(f"[DEBUG] Candidates: {candidates}")
