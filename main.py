@@ -13,9 +13,8 @@ def train():
     from datasets import dataset_factory
     dataset = dataset_factory(args)
     # Automatically set num_items and num_genres from dataset
-    all_item_ids = set()
-    for user_seq in dataset.train.values():
-        all_item_ids.update(user_seq)
+    ratings_df = dataset.load_ratings_df()
+    all_item_ids = set(ratings_df['sid'].unique())
     max_item_id = max(all_item_ids)
     args.num_items = max_item_id
     genre_ids = list(dataset.sid2genre.values())
