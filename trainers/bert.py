@@ -72,7 +72,32 @@ class BERTTrainer(AbstractTrainer):
             for genre in genre_scores_dict:
                 genre_scores_dict[genre] = torch.cat(genre_scores_dict[genre], dim=0).unsqueeze(0)
                 genre_labels_dict[genre] = torch.cat(genre_labels_dict[genre], dim=0).unsqueeze(0)
-            metrics = per_genre_recalls_and_ndcgs(genre_scores_dict, genre_labels_dict, self.metric_ks)
+            # Identify top 5 single genres by count
+            genre_counts = {g: len(genre_scores_dict[g][0]) for g in genre_scores_dict}
+            top_5_genres = sorted(genre_counts, key=genre_counts.get, reverse=True)[:5]
+
+            # Identify multi-genre (assume it contains '|' in the genre name)
+            multi_genre = None
+            for g in genre_scores_dict:
+                if isinstance(g, str) and '|' in g:
+                    multi_genre = g
+                    break
+                # If genre is int or other type, you may need to adjust this logic
+
+            metrics_list = []
+            # Compute Recall@5 for top 5 single genres
+            for genre in top_5_genres:
+                m = per_genre_recalls_and_ndcgs({genre: genre_scores_dict[genre]}, {genre: genre_labels_dict[genre]}, self.metric_ks)
+                metrics_list.append(m[genre].get('Recall@5', 0.0))
+
+            # Compute Recall@5 for multi-genre
+            if multi_genre is not None:
+                m = per_genre_recalls_and_ndcgs({multi_genre: genre_scores_dict[multi_genre]}, {multi_genre: genre_labels_dict[multi_genre]}, self.metric_ks)
+                metrics_list.append(m[multi_genre].get('Recall@5', 0.0))
+            else:
+                metrics_list.append(0.0)  # If no multi-genre found
+
+            return metrics_list
         else:
             seqs, candidates, labels = batch
             scores = self.model(seqs)
