@@ -48,34 +48,38 @@ class BERTTrainer(AbstractTrainer):
         scores = scores[:, -1, :]  # B x V
         scores = scores.gather(1, candidates)  # B x C
 
-        # Flatten all arrays to 1D for correct masking
-        scores = scores.reshape(-1)
-        labels = labels.reshape(-1)
+        # Save original scores and labels for overall metrics
+        scores_2d = scores
+        labels_2d = labels
+
+        # Flatten only for genre filtering
         genre_metrics = {}
         single_genres = ['Action', 'Sci-Fi', 'Thriller', 'Comedy', 'Suspense']
         if genres is not None:
-            genres = genres.reshape(-1)
-            genres = genres.cpu().numpy()
+            flat_scores = scores_2d.reshape(-1)
+            flat_labels = labels_2d.reshape(-1)
+            flat_genres = genres.reshape(-1).cpu().numpy()
             # Only compute genre metrics if shapes match
-            if genres.shape[0] == scores.shape[0] == labels.shape[0]:
+            if flat_genres.shape[0] == flat_scores.shape[0] == flat_labels.shape[0]:
                 for genre_name in single_genres:
                     genre_id = self.args.genre2id[genre_name] if hasattr(self.args, 'genre2id') else single_genres.index(genre_name)
-                    idx = (genres == genre_id)
+                    idx = (flat_genres == genre_id)
                     if idx.sum() > 0:
-                        genre_scores = scores[idx]
-                        genre_labels = labels[idx]
-                        genre_metrics[genre_name] = recalls_and_ndcgs_for_ks(genre_scores, genre_labels, self.metric_ks)
+                        genre_scores = flat_scores[idx]
+                        genre_labels = flat_labels[idx]
+                        # Reshape to (N, 1) for metric functions
+                        genre_metrics[genre_name] = recalls_and_ndcgs_for_ks(genre_scores.unsqueeze(1), genre_labels.unsqueeze(1), self.metric_ks)
                     else:
                         genre_metrics[genre_name] = None
                 # Multi-genre: user-defined list of genre names
                 if multi_genre:
                     multi_ids = [self.args.genre2id[g] if hasattr(self.args, 'genre2id') else single_genres.index(g) for g in multi_genre]
-                    idx = [g in multi_ids for g in genres]
+                    idx = [g in multi_ids for g in flat_genres]
                     idx = torch.tensor(idx)
                     if idx.sum() > 0:
-                        multi_scores = scores[idx]
-                        multi_labels = labels[idx]
-                        genre_metrics['Multi-Genre'] = recalls_and_ndcgs_for_ks(multi_scores, multi_labels, self.metric_ks)
+                        multi_scores = flat_scores[idx]
+                        multi_labels = flat_labels[idx]
+                        genre_metrics['Multi-Genre'] = recalls_and_ndcgs_for_ks(multi_scores.unsqueeze(1), multi_labels.unsqueeze(1), self.metric_ks)
                     else:
                         genre_metrics['Multi-Genre'] = None
             else:
@@ -84,5 +88,5 @@ class BERTTrainer(AbstractTrainer):
                     genre_metrics[genre_name] = None
                 genre_metrics['Multi-Genre'] = None
         # Overall metrics
-        genre_metrics['Overall'] = recalls_and_ndcgs_for_ks(scores, labels, self.metric_ks)
+        genre_metrics['Overall'] = recalls_and_ndcgs_for_ks(scores_2d, labels_2d, self.metric_ks)
         return genre_metrics
