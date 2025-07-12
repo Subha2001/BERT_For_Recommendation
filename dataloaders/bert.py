@@ -13,18 +13,10 @@ class BertDataloader(AbstractDataloader):
         self.mask_prob = args.bert_mask_prob
         self.CLOZE_MASK_TOKEN = self.item_count + 1
 
-        # Debug: Print sid2genre genre diversity
-        sid2genre = getattr(self, 'sid2genre', None)
-        if sid2genre is None:
-            if hasattr(self, 'dataset') and hasattr(self.dataset, 'sid2genre'):
-                sid2genre = self.dataset.sid2genre
-            else:
-                all_sids = set()
-                for user_seq in self.train.values():
-                    all_sids.update(user_seq)
-                sid2genre = {sid: 0 for sid in all_sids}
+        # Always use sid2genre from dataset
+        self.sid2genre = self.dataset.sid2genre
         genre_counts = {}
-        for g in sid2genre.values():
+        for g in self.sid2genre.values():
             genre_counts[g] = genre_counts.get(g, 0) + 1
         print(f"[DEBUG] sid2genre unique genres: {list(genre_counts.keys())}")
         print(f"[DEBUG] sid2genre genre counts: {genre_counts}")
