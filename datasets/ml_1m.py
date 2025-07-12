@@ -47,7 +47,7 @@ class ML1MDataset(AbstractDataset):
     @property
     def sid2genre(self):
         import os
-        movies_path = 'BERT_For_Recommendation/Data/ml-1m/movies.dat'
+        movies_path = 'Data/ml-1m/movies.dat'
         print(f"[DEBUG] Using relative movies_path: {movies_path}")
         if not os.path.exists(movies_path):
             print(f"[ERROR] movies.dat does not exist at: {movies_path}")
