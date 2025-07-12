@@ -51,22 +51,7 @@ class BERTTrainer(AbstractTrainer):
             seqs, candidates, labels = batch
             genres = None
             scores = self.model(seqs)
-        # Remove debug prints for cleaner output
-
         scores = scores[:, -1, :]  # B x V
-        # Debug: check candidate and label indices
-        max_cand = candidates.max().item() if hasattr(candidates, 'max') else None
-        min_cand = candidates.min().item() if hasattr(candidates, 'min') else None
-        vocab_size = scores.size(1)
-        # If all candidate indices are >= 1, shift to 0-based
-        if min_cand is not None and min_cand > 0:
-            candidates = candidates - 1
-            max_cand = candidates.max().item()
-            min_cand = candidates.min().item()
-        if max_cand is not None and (max_cand >= vocab_size or min_cand < 0):
-            print(f"[DEBUG] Candidate indices out of bounds: min={min_cand}, max={max_cand}, vocab_size={vocab_size}")
-            print(f"[DEBUG] Candidates: {candidates}")
-            assert max_cand < vocab_size and min_cand >= 0, "Candidate indices out of bounds!"
         scores = scores.gather(1, candidates)  # B x C
 
         # Calculate genre-based metrics
