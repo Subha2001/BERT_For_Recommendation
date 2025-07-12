@@ -115,9 +115,20 @@ class BERTTrainer(AbstractTrainer):
                     break
                 # If genre is int or other type, you may need to adjust this logic
 
+            print("Full genre distribution in batch:")
+            for g in genre_scores_dict:
+                print(f"Genre {g}: {len(genre_scores_dict[g])} samples")
+
             metrics_list = []
             # Compute Recall@5 for top 5 single genres
             for genre in top_5_genres:
+                score_len = len(genre_scores_dict.get(genre, []))
+                label_len = len(genre_labels_dict.get(genre, []))
+                print(f"Genre: {genre}, score list len: {score_len}, label list len: {label_len}")
+                if score_len == 0 or label_len == 0:
+                    print(f"Skipping empty genre: {genre}")
+                    metrics_list.append(0.0)
+                    continue
                 m = per_genre_recalls_and_ndcgs(
                     {genre: torch.stack(genre_scores_dict[genre], dim=0)},
                     {genre: torch.stack(genre_labels_dict[genre], dim=0)},
@@ -127,12 +138,19 @@ class BERTTrainer(AbstractTrainer):
 
             # Compute Recall@5 for multi-genre
             if multi_genre is not None:
-                m = per_genre_recalls_and_ndcgs(
-                    {multi_genre: torch.stack(genre_scores_dict[multi_genre], dim=0)},
-                    {multi_genre: torch.stack(genre_labels_dict[multi_genre], dim=0)},
-                    self.metric_ks
-                )
-                metrics_list.append(m[multi_genre].get('Recall@5', 0.0))
+                score_len = len(genre_scores_dict.get(multi_genre, []))
+                label_len = len(genre_labels_dict.get(multi_genre, []))
+                print(f"Multi-genre: {multi_genre}, score list len: {score_len}, label list len: {label_len}")
+                if score_len == 0 or label_len == 0:
+                    print(f"Skipping empty multi-genre: {multi_genre}")
+                    metrics_list.append(0.0)
+                else:
+                    m = per_genre_recalls_and_ndcgs(
+                        {multi_genre: torch.stack(genre_scores_dict[multi_genre], dim=0)},
+                        {multi_genre: torch.stack(genre_labels_dict[multi_genre], dim=0)},
+                        self.metric_ks
+                    )
+                    metrics_list.append(m[multi_genre].get('Recall@5', 0.0))
             else:
                 metrics_list.append(0.0)  # If no multi-genre found
 
