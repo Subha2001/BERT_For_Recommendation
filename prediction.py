@@ -161,10 +161,10 @@ def predict_top5_per_genre(user_id, interaction_seq, genre_list, model_path='dow
         multi_pair_movies = [0]*5
         multi_pair_name = "Multi-Genre"
 
-    # Print as table
-    header = ["User ID"] + [genre_id_to_name.get(gid, str(gid)) for gid in genre_ids] + [multi_pair_name]
+    # Print as table with user_id repeated 5 times
+    header = ["User ID"] * 5 + [genre_id_to_name.get(gid, str(gid)) for gid in genre_ids] + [multi_pair_name]
     print("\t".join(header))
-    row = [str(user_id)] + [", ".join(map(str, genre_to_top5[gid])) for gid in genre_ids] + [", ".join(map(str, multi_pair_movies))]
+    row = [str(user_id)] * 5 + [", ".join(map(str, genre_to_top5[gid])) for gid in genre_ids] + [", ".join(map(str, multi_pair_movies))]
     print("\t".join(row))
 
 def predict_top5_genres(user_id, interaction_seq, model_path='downloaded_model/best_acc_model.pth'):
