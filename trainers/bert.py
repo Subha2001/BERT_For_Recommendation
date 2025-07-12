@@ -79,29 +79,11 @@ class BERTTrainer(AbstractTrainer):
                 genre_labels_dict[genre_val].append(labels[idx])  # full label row
 
             # Identify top 5 single genres by count
-            genre_counts = {g: len(genre_scores_dict[g][0]) for g in genre_scores_dict}
-            top_5_genres = sorted(genre_counts, key=genre_counts.get, reverse=True)[:5]
-
-
-            # Truncate all arrays to the shortest length to avoid shape mismatch
-            min_len = min(flat_scores.shape[0], flat_labels.shape[0], flat_genres.shape[0])
-            flat_scores = flat_scores[:min_len]
-            flat_labels = flat_labels[:min_len]
-            flat_genres = flat_genres[:min_len]
-
-            genre_scores_dict = {}
-            genre_labels_dict = {}
-            for idx in range(min_len):
-                genre = flat_genres[idx].item()
-                if genre not in genre_scores_dict:
-                    genre_scores_dict[genre] = []
-                    genre_labels_dict[genre] = []
-                genre_scores_dict[genre].append(flat_scores[idx].unsqueeze(0))
-                genre_labels_dict[genre].append(flat_labels[idx].unsqueeze(0))
-
-            # Identify top 5 single genres by count
             genre_counts = {g: len(genre_scores_dict[g]) for g in genre_scores_dict}
             top_5_genres = sorted(genre_counts, key=genre_counts.get, reverse=True)[:5]
+
+
+            # ...existing code...
 
             # Identify multi-genre (assume it contains '|' in the genre name)
             multi_genre = None
