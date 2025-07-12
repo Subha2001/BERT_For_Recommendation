@@ -44,12 +44,12 @@ class BERT(nn.Module):
         if genre is not None:
             debug_tensor("BERT input genre", genre)
         mask = (x > 0).unsqueeze(1).repeat(1, x.size(1), 1).unsqueeze(1)
-        debug_tensor("BERT mask", mask)
+        debug_tensor("BERT mask", mask, min_allowed=0)
         x = self.embedding(x, genre)
-        debug_tensor("BERT after embedding", x)
+        debug_tensor("BERT after embedding", x, min_allowed=0)
         for i, transformer in enumerate(self.transformer_blocks):
             x = transformer.forward(x, mask)
-            debug_tensor(f"BERT after transformer block {i}", x)
+            debug_tensor(f"BERT after transformer block {i}", x, min_allowed=0)
         return x
 
     def init_weights(self):
