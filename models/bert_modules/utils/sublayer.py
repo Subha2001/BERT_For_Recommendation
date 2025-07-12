@@ -22,10 +22,8 @@ class SublayerConnection(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x, sublayer):
-        debug_tensor("SublayerConnection input x", x)
         normed = self.norm(x)
         sublayer_out = sublayer(normed)
         dropped = self.dropout(sublayer_out)
         out = x + dropped
-        debug_tensor("SublayerConnection output", out) if not torch.isfinite(out).all() else None
         return out
