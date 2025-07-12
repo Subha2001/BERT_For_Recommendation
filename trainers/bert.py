@@ -118,12 +118,20 @@ class BERTTrainer(AbstractTrainer):
             metrics_list = []
             # Compute Recall@5 for top 5 single genres
             for genre in top_5_genres:
-                m = per_genre_recalls_and_ndcgs({genre: genre_scores_dict[genre]}, {genre: genre_labels_dict[genre]}, self.metric_ks)
+                m = per_genre_recalls_and_ndcgs(
+                    {genre: torch.stack(genre_scores_dict[genre], dim=0)},
+                    {genre: torch.stack(genre_labels_dict[genre], dim=0)},
+                    self.metric_ks
+                )
                 metrics_list.append(m[genre].get('Recall@5', 0.0))
 
             # Compute Recall@5 for multi-genre
             if multi_genre is not None:
-                m = per_genre_recalls_and_ndcgs({multi_genre: genre_scores_dict[multi_genre]}, {multi_genre: genre_labels_dict[multi_genre]}, self.metric_ks)
+                m = per_genre_recalls_and_ndcgs(
+                    {multi_genre: torch.stack(genre_scores_dict[multi_genre], dim=0)},
+                    {multi_genre: torch.stack(genre_labels_dict[multi_genre], dim=0)},
+                    self.metric_ks
+                )
                 metrics_list.append(m[multi_genre].get('Recall@5', 0.0))
             else:
                 metrics_list.append(0.0)  # If no multi-genre found
