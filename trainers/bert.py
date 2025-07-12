@@ -67,12 +67,16 @@ class BERTTrainer(AbstractTrainer):
             genre_scores_dict = {}
             genre_labels_dict = {}
             for idx in range(scores.size(0)):
-                genre = genres[idx].item() if hasattr(genres, 'item') else genres[idx]
-                if genre not in genre_scores_dict:
-                    genre_scores_dict[genre] = []
-                    genre_labels_dict[genre] = []
-                genre_scores_dict[genre].append(scores[idx])  # full candidate row
-                genre_labels_dict[genre].append(labels[idx])  # full label row
+                # If genres is 2D (B x C), take the first candidate's genre for grouping
+                if genres.dim() == 2:
+                    genre_val = genres[idx, 0].item()
+                else:
+                    genre_val = genres[idx].item()
+                if genre_val not in genre_scores_dict:
+                    genre_scores_dict[genre_val] = []
+                    genre_labels_dict[genre_val] = []
+                genre_scores_dict[genre_val].append(scores[idx])  # full candidate row
+                genre_labels_dict[genre_val].append(labels[idx])  # full label row
 
             # Identify top 5 single genres by count
             genre_counts = {g: len(genre_scores_dict[g][0]) for g in genre_scores_dict}
