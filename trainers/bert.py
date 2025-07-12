@@ -39,7 +39,12 @@ class BERTTrainer(AbstractTrainer):
     def calculate_metrics(self, batch, multi_genre=None):
         import numpy as np
         # batch = (seqs, candidates, labels, genres) or (seqs, candidates, labels)
-        if len(batch) == 4:
+        # batch = (seqs, candidates, labels, sequence_genres, candidate_genres) or (seqs, candidates, labels)
+        if len(batch) == 5:
+            seqs, candidates, labels, sequence_genres, candidate_genres = batch
+            scores = self.model(seqs, sequence_genres)  # B x T x V
+            genres = candidate_genres
+        elif len(batch) == 4:
             seqs, candidates, labels, genres = batch
             scores = self.model(seqs, genres)  # B x T x V
         else:
