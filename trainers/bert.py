@@ -37,6 +37,12 @@ class BERTTrainer(AbstractTrainer):
         return loss
 
     def calculate_metrics(self, batch, multi_genre=None):
+        import numpy as np
+        print('DEBUG: scores shape:', scores.shape)
+        print('DEBUG: labels shape:', labels.shape)
+        if genres is not None:
+            print('DEBUG: genres shape:', genres.shape)
+            print('DEBUG: unique genres:', np.unique(genres.cpu().numpy()))
         # batch = (seqs, candidates, labels, genres) or (seqs, candidates, labels)
         if len(batch) == 4:
             seqs, candidates, labels, genres = batch
@@ -64,6 +70,7 @@ class BERTTrainer(AbstractTrainer):
                 for genre_name in single_genres:
                     genre_id = self.args.genre2id[genre_name] if hasattr(self.args, 'genre2id') else single_genres.index(genre_name)
                     idx = (flat_genres == genre_id)
+                    print(f'DEBUG: genre {genre_name} (id {genre_id}) mask count:', idx.sum())
                     if idx.sum() > 0:
                         genre_scores = flat_scores[idx]
                         genre_labels = flat_labels[idx]
@@ -75,6 +82,7 @@ class BERTTrainer(AbstractTrainer):
                 if multi_genre:
                     multi_ids = [self.args.genre2id[g] if hasattr(self.args, 'genre2id') else single_genres.index(g) for g in multi_genre]
                     idx = [g in multi_ids for g in flat_genres]
+                    print(f'DEBUG: multi-genre {multi_genre} mask count:', np.sum(idx))
                     idx = torch.tensor(idx)
                     if idx.sum() > 0:
                         multi_scores = flat_scores[idx]
