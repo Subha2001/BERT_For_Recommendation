@@ -1,14 +1,5 @@
 import torch
-def debug_tensor(name, x, min_allowed=None, max_allowed=None):
-    try:
-        if hasattr(x, 'isfinite') and not torch.isfinite(x).all():
-            print(f"[DEBUG] {name} contains NaN or Inf! shape={x.shape}, dtype={x.dtype}, min={x.min().item()}, max={x.max().item()}")
-        if min_allowed is not None and x.min().item() < min_allowed:
-            print(f"[DEBUG] {name} min value {x.min().item()} below allowed {min_allowed}")
-        if max_allowed is not None and x.max().item() > max_allowed:
-            print(f"[DEBUG] {name} max value {x.max().item()} above allowed {max_allowed}")
-    except Exception as e:
-        print(f"[DEBUG] {name}: Could not print stats due to error: {e}")
+    # ...existing code...
 import torch.nn as nn
 import torch
 
@@ -23,9 +14,7 @@ class LayerNorm(nn.Module):
         self.eps = eps
 
     def forward(self, x):
-        debug_tensor("LayerNorm input x", x)
         mean = x.mean(-1, keepdim=True)
         std = x.std(-1, keepdim=True)
         out = self.a_2 * (x - mean) / (std + self.eps) + self.b_2
-        debug_tensor("LayerNorm output", out)
         return out

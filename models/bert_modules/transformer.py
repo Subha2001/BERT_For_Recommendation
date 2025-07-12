@@ -1,11 +1,5 @@
 import torch
-def debug_tensor(name, x):
-    try:
-        print(f"[DEBUG] {name}: shape={x.shape}, dtype={x.dtype}, min={x.min().item()}, max={x.max().item()}")
-        if hasattr(x, 'isfinite') and not torch.isfinite(x).all():
-            print(f"[DEBUG] {name} contains NaN or Inf!")
-    except Exception as e:
-        print(f"[DEBUG] {name}: Could not print stats due to error: {e}")
+    # The debug_tensor function has been removed as part of the cleanup.
 import torch.nn as nn
 
 from .attention import MultiHeadedAttention
@@ -34,12 +28,7 @@ class TransformerBlock(nn.Module):
         self.dropout = nn.Dropout(p=dropout)
 
     def forward(self, x, mask):
-        debug_tensor("TransformerBlock input x", x)
-        debug_tensor("TransformerBlock mask", mask)
         x = self.input_sublayer(x, lambda _x: self.attention.forward(_x, _x, _x, mask=mask))
-        debug_tensor("TransformerBlock after input_sublayer", x)
         x = self.output_sublayer(x, self.feed_forward)
-        debug_tensor("TransformerBlock after output_sublayer", x)
         out = self.dropout(x)
-        debug_tensor("TransformerBlock after dropout", out)
         return out

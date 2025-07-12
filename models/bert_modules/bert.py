@@ -1,14 +1,5 @@
 import torch
-def debug_tensor(name, x, min_allowed=None, max_allowed=None):
-    try:
-        if hasattr(x, 'isfinite') and not torch.isfinite(x).all():
-            print(f"[DEBUG] {name} contains NaN or Inf! shape={x.shape}, dtype={x.dtype}, min={x.min().item()}, max={x.max().item()}")
-        if min_allowed is not None and x.min().item() < min_allowed:
-            print(f"[DEBUG] {name} min value {x.min().item()} below allowed {min_allowed}")
-        if max_allowed is not None and x.max().item() > max_allowed:
-            print(f"[DEBUG] {name} max value {x.max().item()} above allowed {max_allowed}")
-    except Exception as e:
-        print(f"[DEBUG] {name}: Could not print stats due to error: {e}")
+    # ...existing code...
 from torch import nn as nn
 
 from models.bert_modules.embedding import BERTEmbedding
@@ -43,16 +34,10 @@ class BERT(nn.Module):
 
     # Updated newly
     def forward(self, x, genre=None):
-        debug_tensor("BERT input x", x)
-        if genre is not None:
-            debug_tensor("BERT input genre", genre)
         mask = (x > 0).unsqueeze(1).repeat(1, x.size(1), 1).unsqueeze(1)
-        debug_tensor("BERT mask", mask, min_allowed=0)
         x = self.embedding(x, genre)
-        debug_tensor("BERT after embedding", x, min_allowed=0)
-        for i, transformer in enumerate(self.transformer_blocks):
+        for transformer in self.transformer_blocks:
             x = transformer.forward(x, mask)
-            debug_tensor(f"BERT after transformer block {i}", x, min_allowed=0)
         return x
 
     def init_weights(self):
