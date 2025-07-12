@@ -1,8 +1,4 @@
 from .base import AbstractTrainer
-
-    # ...existing code...
-
-from .base import AbstractTrainer
 from .utils import recalls_and_ndcgs_for_ks, per_genre_recalls_and_ndcgs
 import torch
 
@@ -11,6 +7,8 @@ import torch.nn as nn
 class BERTTrainer(AbstractTrainer):
     def __init__(self, args, model, train_loader, val_loader, test_loader, export_root):
         super().__init__(args, model, train_loader, val_loader, test_loader, export_root)
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.model = model.to(self.device)
         self.ce = nn.CrossEntropyLoss(ignore_index=0)
 
     @classmethod
@@ -30,9 +28,14 @@ class BERTTrainer(AbstractTrainer):
         # Support genre input: batch = (seqs, labels, genres) or (seqs, labels)
         if len(batch) == 3:
             seqs, labels, genres = batch # Updated newly
+            seqs = seqs.to(self.device)
+            labels = labels.to(self.device)
+            genres = genres.to(self.device)
             logits = self.model(seqs, genres)  # B x T x V
         else:
             seqs, labels = batch
+            seqs = seqs.to(self.device)
+            labels = labels.to(self.device)
             logits = self.model(seqs)
         logits = logits.view(-1, logits.size(-1))  # (B*T) x V
         labels = labels.view(-1)  # B*T
@@ -40,13 +43,15 @@ class BERTTrainer(AbstractTrainer):
         return loss
 
     def calculate_metrics(self, batch):
-
         # Support genre input: batch = (seqs, candidates, labels, genres) or (seqs, candidates, labels)
         if len(batch) == 4:
             seqs, candidates, labels, genres = batch # Updated newly
+            seqs = seqs.to(self.device)
+            candidates = candidates.to(self.device)
+            labels = labels.to(self.device)
+            genres = genres.to(self.device)
             scores = self.model(seqs, genres)  # B x T x V
             scores = scores[:, -1, :]  # B x V
-            # ...existing code...
             # genres: B x C (genre for each candidate)
             # labels: B x C (ground truth for each candidate)
             # Group scores and labels by genre (robust flattening)
@@ -157,9 +162,11 @@ class BERTTrainer(AbstractTrainer):
             return metrics_dict
         else:
             seqs, candidates, labels = batch
+            seqs = seqs.to(self.device)
+            candidates = candidates.to(self.device)
+            labels = labels.to(self.device)
             scores = self.model(seqs)
             scores = scores[:, -1, :]  # B x V
-            # ...existing code...
             # Defensive check for out-of-bounds indices
             if (candidates < 0).any() or (candidates >= scores.size(1)).any():
                 raise ValueError(
