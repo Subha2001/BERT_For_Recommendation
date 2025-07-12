@@ -89,44 +89,71 @@ class BERTTrainer(AbstractTrainer):
                         multi_genre_scores.append(scores[idx])
                         multi_genre_labels.append(labels[idx])
 
-            metrics_list = []
-            # Recall@5 for top 5 single genres
+            # Compute Recall@5 and Recall@1 for top 5 genres and multi-genre
+            recall5_list = []
+            recall1_list = []
             for genre in top_5_genres:
                 if not genre_scores_dict.get(genre):
-                    metrics_list.append(0.0)
+                    recall5_list.append(0.0)
+                    recall1_list.append(0.0)
                     continue
-                m = per_genre_recalls_and_ndcgs(
+                m5 = per_genre_recalls_and_ndcgs(
                     {genre: torch.stack(genre_scores_dict[genre], dim=0)},
                     {genre: torch.stack(genre_labels_dict[genre], dim=0)},
-                    self.metric_ks
+                    [5]
                 )
-                metrics_list.append(m[genre].get('Recall@5', 0.0))
+                m1 = per_genre_recalls_and_ndcgs(
+                    {genre: torch.stack(genre_scores_dict[genre], dim=0)},
+                    {genre: torch.stack(genre_labels_dict[genre], dim=0)},
+                    [1]
+                )
+                recall5_list.append(m5[genre].get('Recall@5', 0.0))
+                recall1_list.append(m1[genre].get('Recall@1', 0.0))
 
-            # Recall@5 for multi-genre
+            # Multi-genre
             if multi_genre_scores and multi_genre_labels:
-                m = per_genre_recalls_and_ndcgs(
+                m5 = per_genre_recalls_and_ndcgs(
                     {'multi_genre': torch.stack(multi_genre_scores, dim=0)},
                     {'multi_genre': torch.stack(multi_genre_labels, dim=0)},
-                    self.metric_ks
+                    [5]
                 )
-                metrics_list.append(m['multi_genre'].get('Recall@5', 0.0))
+                m1 = per_genre_recalls_and_ndcgs(
+                    {'multi_genre': torch.stack(multi_genre_scores, dim=0)},
+                    {'multi_genre': torch.stack(multi_genre_labels, dim=0)},
+                    [1]
+                )
+                recall5_list.append(m5['multi_genre'].get('Recall@5', 0.0))
+                recall1_list.append(m1['multi_genre'].get('Recall@1', 0.0))
             else:
-                metrics_list.append(0.0)
+                recall5_list.append(0.0)
+                recall1_list.append(0.0)
 
             # Pad to always have 6 entries (5 single + 1 multi)
-            while len(metrics_list) < 6:
-                metrics_list.append(0.0)
+            while len(recall5_list) < 6:
+                recall5_list.append(0.0)
+            while len(recall1_list) < 6:
+                recall1_list.append(0.0)
 
             # Build metrics dict
             metrics_dict = {
                 f'Recall@5_genre{i+1}': (
                     0.0 if isinstance(s, float) and (s != s) else s
                 )
-                for i, s in enumerate(metrics_list[:-1])
+                for i, s in enumerate(recall5_list[:-1])
             }
             metrics_dict['Recall@5_multigenre'] = (
-                0.0 if isinstance(metrics_list[-1], float) and (metrics_list[-1] != metrics_list[-1])
-                else metrics_list[-1]
+                0.0 if isinstance(recall5_list[-1], float) and (recall5_list[-1] != recall5_list[-1])
+                else recall5_list[-1]
+            )
+            metrics_dict.update({
+                f'Recall@1_genre{i+1}': (
+                    0.0 if isinstance(s, float) and (s != s) else s
+                )
+                for i, s in enumerate(recall1_list[:-1])
+            })
+            metrics_dict['Recall@1_multigenre'] = (
+                0.0 if isinstance(recall1_list[-1], float) and (recall1_list[-1] != recall1_list[-1])
+                else recall1_list[-1]
             )
 
             # Add overall metrics
