@@ -45,23 +45,23 @@ class BERTTrainer(AbstractTrainer):
             scores = scores.gather(1, candidates)  # B x C
             # genres: B x C (genre for each candidate)
             # labels: B x C (ground truth for each candidate)
-            # Group scores and labels by genre
+            # Group scores and labels by genre (robust flattening)
+            flat_scores = scores.flatten()
+            flat_labels = labels.flatten()
+            if hasattr(genres, 'flatten'):
+                flat_genres = genres.flatten()
+            else:
+                flat_genres = torch.tensor(genres).flatten()
+
             genre_scores_dict = {}
             genre_labels_dict = {}
-            for i in range(scores.shape[0]):
-                for j in range(scores.shape[1]):
-                    # Robust genre indexing
-                    if hasattr(genres, 'ndim') and genres.ndim == 2:
-                        genre = genres[i][j]
-                    elif hasattr(genres, 'ndim') and genres.ndim == 1:
-                        genre = genres[j]
-                    else:
-                        genre = genres[i]
-                    if genre not in genre_scores_dict:
-                        genre_scores_dict[genre] = []
-                        genre_labels_dict[genre] = []
-                    genre_scores_dict[genre].append(scores[i, j].unsqueeze(0))
-                    genre_labels_dict[genre].append(labels[i, j].unsqueeze(0))
+            for idx in range(flat_scores.shape[0]):
+                genre = flat_genres[idx].item()
+                if genre not in genre_scores_dict:
+                    genre_scores_dict[genre] = []
+                    genre_labels_dict[genre] = []
+                genre_scores_dict[genre].append(flat_scores[idx].unsqueeze(0))
+                genre_labels_dict[genre].append(flat_labels[idx].unsqueeze(0))
             # Stack tensors for each genre
             for genre in genre_scores_dict:
                 genre_scores_dict[genre] = torch.cat(genre_scores_dict[genre], dim=0).unsqueeze(0)
