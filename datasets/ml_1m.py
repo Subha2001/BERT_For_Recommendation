@@ -47,12 +47,9 @@ class ML1MDataset(AbstractDataset):
     @property
     def sid2genre(self):
         import os
-        folder_path = self._get_rawdata_folder_path()
-        movies_path = folder_path.joinpath('movies.dat')
-        print(f"[DEBUG] Current working directory: {os.getcwd()}")
-        print(f"[DEBUG] folder_path: {folder_path}")
-        print(f"[DEBUG] movies_path: {movies_path}")
-        if not movies_path.exists():
+        movies_path = '/kaggle/working/BERT_For_Recommendation/Data/ml-1m/movies.dat'
+        print(f"[DEBUG] Using absolute movies_path: {movies_path}")
+        if not os.path.exists(movies_path):
             print(f"[ERROR] movies.dat does not exist at: {movies_path}")
         movies_df = pd.read_csv(movies_path, sep='::', header=None, engine='python')
         movies_df.columns = ['sid', 'title', 'genre']
