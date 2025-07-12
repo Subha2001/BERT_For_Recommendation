@@ -171,9 +171,15 @@ class AbstractTrainer(metaclass=ABCMeta):
             average_metrics = average_meter_set.averages()
             with open(os.path.join(self.export_root, 'logs', 'test_metrics.json'), 'w') as f:
                 json.dump(average_metrics, f, indent=4)
-            # Print each metric on a new line in summary
+            # Only print per-genre and multi-genre metrics, skip overall metrics
+            skip_keys = {
+                'Recall@100', 'NDCG@100', 'Recall@50', 'NDCG@50',
+                'Recall@20', 'NDCG@20', 'Recall@10', 'NDCG@10',
+                'Recall@5', 'NDCG@5', 'Recall@1', 'NDCG@1'
+            }
             for k, v in average_metrics.items():
-                print(f'{k}: {v}')
+                if k not in skip_keys:
+                    print(f'{k}: {v}')
 
     def _create_optimizer(self):
         args = self.args
