@@ -12,6 +12,12 @@ class LayerNorm(nn.Module):
         self.eps = eps
 
     def forward(self, x):
+        # Debug: print tensor stats before CUDA operation
+        if not torch.isfinite(x).all():
+            print("[LayerNorm DEBUG] x contains NaN or Inf values!")
+            print("x min:", x.min().item(), "x max:", x.max().item())
+            print("x shape:", x.shape)
+            print("x dtype:", x.dtype)
         mean = x.mean(-1, keepdim=True)
         std = x.std(-1, keepdim=True)
         return self.a_2 * (x - mean) / (std + self.eps) + self.b_2
