@@ -56,26 +56,33 @@ class BERTTrainer(AbstractTrainer):
         if genres is not None:
             genres = genres.reshape(-1)
             genres = genres.cpu().numpy()
-            for genre_name in single_genres:
-                genre_id = self.args.genre2id[genre_name] if hasattr(self.args, 'genre2id') else single_genres.index(genre_name)
-                idx = (genres == genre_id)
-                if idx.sum() > 0:
-                    genre_scores = scores[idx]
-                    genre_labels = labels[idx]
-                    genre_metrics[genre_name] = recalls_and_ndcgs_for_ks(genre_scores, genre_labels, self.metric_ks)
-                else:
+            # Only compute genre metrics if shapes match
+            if genres.shape[0] == scores.shape[0] == labels.shape[0]:
+                for genre_name in single_genres:
+                    genre_id = self.args.genre2id[genre_name] if hasattr(self.args, 'genre2id') else single_genres.index(genre_name)
+                    idx = (genres == genre_id)
+                    if idx.sum() > 0:
+                        genre_scores = scores[idx]
+                        genre_labels = labels[idx]
+                        genre_metrics[genre_name] = recalls_and_ndcgs_for_ks(genre_scores, genre_labels, self.metric_ks)
+                    else:
+                        genre_metrics[genre_name] = None
+                # Multi-genre: user-defined list of genre names
+                if multi_genre:
+                    multi_ids = [self.args.genre2id[g] if hasattr(self.args, 'genre2id') else single_genres.index(g) for g in multi_genre]
+                    idx = [g in multi_ids for g in genres]
+                    idx = torch.tensor(idx)
+                    if idx.sum() > 0:
+                        multi_scores = scores[idx]
+                        multi_labels = labels[idx]
+                        genre_metrics['Multi-Genre'] = recalls_and_ndcgs_for_ks(multi_scores, multi_labels, self.metric_ks)
+                    else:
+                        genre_metrics['Multi-Genre'] = None
+            else:
+                # Shapes do not match, skip genre metrics
+                for genre_name in single_genres:
                     genre_metrics[genre_name] = None
-            # Multi-genre: user-defined list of genre names
-            if multi_genre:
-                multi_ids = [self.args.genre2id[g] if hasattr(self.args, 'genre2id') else single_genres.index(g) for g in multi_genre]
-                idx = [g in multi_ids for g in genres]
-                idx = torch.tensor(idx)
-                if idx.sum() > 0:
-                    multi_scores = scores[idx]
-                    multi_labels = labels[idx]
-                    genre_metrics['Multi-Genre'] = recalls_and_ndcgs_for_ks(multi_scores, multi_labels, self.metric_ks)
-                else:
-                    genre_metrics['Multi-Genre'] = None
+                genre_metrics['Multi-Genre'] = None
         # Overall metrics
         genre_metrics['Overall'] = recalls_and_ndcgs_for_ks(scores, labels, self.metric_ks)
         return genre_metrics
