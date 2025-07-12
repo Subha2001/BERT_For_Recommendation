@@ -48,7 +48,7 @@ class ML1MDataset(AbstractDataset):
     def sid2genre(self):
         folder_path = self._get_rawdata_folder_path()
         movies_path = folder_path.joinpath('movies.dat')
-        movies_df = pd.read_csv(movies_path, sep='::', header=None, engine='python')
+        movies_df = pd.read_csv(movies_path, sep='::', header=None, engine='python', encoding='latin-1')
         movies_df.columns = ['sid', 'title', 'genre']
         # Map each sid to a genre id (you may want to encode genres as integers)
         unique_genres = {g: i+1 for i, g in enumerate(sorted(set(movies_df['genre'])))}
