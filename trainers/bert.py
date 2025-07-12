@@ -1,9 +1,18 @@
 from .base import AbstractTrainer
+
+def debug_tensor(name, x):
+    try:
+        print(f"[DEBUG] {name}: shape={x.shape}, dtype={x.dtype}, min={x.min().item()}, max={x.max().item()}")
+        if not torch.isfinite(x).all():
+            print(f"[DEBUG] {name} contains NaN or Inf!")
+    except Exception as e:
+        print(f"[DEBUG] {name}: Could not print stats due to error: {e}")
+
+from .base import AbstractTrainer
 from .utils import recalls_and_ndcgs_for_ks, per_genre_recalls_and_ndcgs
 import torch
 
 import torch.nn as nn
-
 
 class BERTTrainer(AbstractTrainer):
     def __init__(self, args, model, train_loader, val_loader, test_loader, export_root):
@@ -42,15 +51,18 @@ class BERTTrainer(AbstractTrainer):
         if len(batch) == 4:
             seqs, candidates, labels, genres = batch # Updated newly
             scores = self.model(seqs, genres)  # B x T x V
+            debug_tensor("model output (scores)", scores)
             scores = scores[:, -1, :]  # B x V
-            print("[DEBUG] scores shape before gather:", scores.shape)
-            print("[DEBUG] candidates shape:", candidates.shape)
-            print("[DEBUG] candidates min:", candidates.min().item(), "max:", candidates.max().item())
+            debug_tensor("scores after slicing", scores)
+            debug_tensor("candidates", candidates)
             print("[DEBUG] scores dim size:", scores.size(1))
             # Check for out-of-bounds indices
             if candidates.max().item() >= scores.size(1):
                 print("[ERROR] Candidate index out of bounds! Max candidate:", candidates.max().item(), "scores dim size:", scores.size(1))
             scores = scores.gather(1, candidates)  # B x C
+            debug_tensor("scores after gather", scores)
+            debug_tensor("labels", labels)
+            debug_tensor("genres", genres)
             # genres: B x C (genre for each candidate)
             # labels: B x C (ground truth for each candidate)
             # Group scores and labels by genre (robust flattening)
