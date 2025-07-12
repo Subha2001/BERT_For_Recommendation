@@ -48,7 +48,7 @@ class ML1MDataset(AbstractDataset):
     def sid2genre(self):
         import os
         movies_path = 'Data/ml-1m/movies.dat'
-        print(f"[DEBUG] Using relative movies_path: {movies_path}")
+        # ...existing code...
         if not os.path.exists(movies_path):
             print(f"[ERROR] movies.dat does not exist at: {movies_path}")
         movies_df = pd.read_csv(movies_path, sep='::', header=None, engine='python', encoding='latin-1')

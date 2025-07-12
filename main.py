@@ -22,13 +22,9 @@ def train():
     genre_ids = list(dataset.sid2genre.values())
     max_genre_id = max(genre_ids)
     args.num_genres = max_genre_id + 1
-    print(f"[MAIN DEBUG] Set args.num_items to {args.num_items}")
-    print(f"[MAIN DEBUG] Set args.num_genres to {args.num_genres}")
     genre_counts = {}
     for g in genre_ids:
         genre_counts[g] = genre_counts.get(g, 0) + 1
-    print(f"[MAIN DEBUG] sid2genre unique genres: {list(genre_counts.keys())}")
-    print(f"[MAIN DEBUG] sid2genre genre counts: {genre_counts}")
     train_loader, val_loader, test_loader = dataloader_factory(args)
     model = model_factory(args)
     trainer = trainer_factory(args, model, train_loader, val_loader, test_loader, export_root)
