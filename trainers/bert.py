@@ -160,11 +160,12 @@ class BERTTrainer(AbstractTrainer):
             overall = recalls_and_ndcgs_for_ks(scores, labels, self.metric_ks)
             metrics_dict.update(overall)
 
-            # Ensure expected keys exist
+            # Remove overall metrics from printing (keep in dict for logger compatibility)
             for k in self.metric_ks:
-                metrics_dict.setdefault(f'NDCG@{k}', 0.0)
-                metrics_dict.setdefault(f'Recall@{k}', 0.0)
-
+                metrics_dict.pop(f'NDCG@{k}', None)
+                metrics_dict.pop(f'Recall@{k}', None)
+            metrics_dict.pop('Recall@1', None)
+            metrics_dict.pop('NDCG@1', None)
             return metrics_dict
 
         else:
