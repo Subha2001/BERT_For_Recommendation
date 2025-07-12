@@ -169,4 +169,7 @@ class BertEvalDataset(data_utils.Dataset):
         seq = [0] * padding_len + seq
         # Get genres for each candidate
         candidate_genres = [self.sid2genre.get(s, 0) for s in candidates]
+        # Debug: check alignment
+        if not (len(candidates) == len(labels) == len(candidate_genres)):
+            print(f"DEBUG: candidates={len(candidates)}, labels={len(labels)}, candidate_genres={len(candidate_genres)}")
         return torch.LongTensor(seq), torch.LongTensor(candidates), torch.LongTensor(labels), torch.LongTensor(candidate_genres)
