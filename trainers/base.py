@@ -131,12 +131,7 @@ class AbstractTrainer(metaclass=ABCMeta):
 
                 for k, v in metrics.items():
                     average_meter_set.update(k, v)
-                description_metrics = ['NDCG@%d' % k for k in self.metric_ks[:3]] +\
-                                      ['Recall@%d' % k for k in self.metric_ks[:3]]
-                description = 'Val: ' + ', '.join(s + ' {:.3f}' for s in description_metrics)
-                description = description.replace('NDCG', 'N').replace('Recall', 'R')
-                description = description.format(*(average_meter_set[k].avg for k in description_metrics))
-                tqdm_dataloader.set_description(description)
+                tqdm_dataloader.set_description('Validating...')
 
             log_data = {
                 'state_dict': (self._create_state_dict()),
@@ -165,12 +160,7 @@ class AbstractTrainer(metaclass=ABCMeta):
 
                 for k, v in metrics.items():
                     average_meter_set.update(k, v)
-                description_metrics = ['NDCG@%d' % k for k in self.metric_ks[:3]] +\
-                                      ['Recall@%d' % k for k in self.metric_ks[:3]]
-                description = 'Val: ' + ', '.join(s + ' {:.3f}' for s in description_metrics)
-                description = description.replace('NDCG', 'N').replace('Recall', 'R')
-                description = description.format(*(average_meter_set[k].avg for k in description_metrics))
-                tqdm_dataloader.set_description(description)
+                tqdm_dataloader.set_description('Testing...')
 
             average_metrics = average_meter_set.averages()
             with open(os.path.join(self.export_root, 'logs', 'test_metrics.json'), 'w') as f:
