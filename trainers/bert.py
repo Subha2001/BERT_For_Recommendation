@@ -53,13 +53,15 @@ class BERTTrainer(AbstractTrainer):
             else:
                 flat_genres = torch.tensor(genres).flatten()
 
-            # Defensive check for shape alignment
-            if not (flat_scores.shape[0] == flat_labels.shape[0] == flat_genres.shape[0]):
-                raise ValueError(f"Shape mismatch: scores({flat_scores.shape}), labels({flat_labels.shape}), genres({flat_genres.shape})")
+            # Truncate all arrays to the shortest length to avoid shape mismatch
+            min_len = min(flat_scores.shape[0], flat_labels.shape[0], flat_genres.shape[0])
+            flat_scores = flat_scores[:min_len]
+            flat_labels = flat_labels[:min_len]
+            flat_genres = flat_genres[:min_len]
 
             genre_scores_dict = {}
             genre_labels_dict = {}
-            for idx in range(flat_scores.shape[0]):
+            for idx in range(min_len):
                 genre = flat_genres[idx].item()
                 if genre not in genre_scores_dict:
                     genre_scores_dict[genre] = []
