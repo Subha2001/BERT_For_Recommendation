@@ -97,7 +97,10 @@ class BERTTrainer(AbstractTrainer):
             else:
                 metrics_list.append(0.0)  # If no multi-genre found
 
-            return metrics_list
+            # Return as dict for base trainer compatibility
+            metrics_dict = {f'Recall@5_genre{i+1}': score for i, score in enumerate(metrics_list[:-1])}
+            metrics_dict['Recall@5_multigenre'] = metrics_list[-1]
+            return metrics_dict
         else:
             seqs, candidates, labels = batch
             scores = self.model(seqs)
