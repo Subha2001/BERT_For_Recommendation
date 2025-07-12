@@ -7,6 +7,7 @@ import torch.utils.data as data_utils
 
 class BertDataloader(AbstractDataloader):
     def __init__(self, args, dataset):
+        self.dataset = dataset
         super().__init__(args, dataset)
         args.num_items = len(self.smap)
         self.max_len = args.bert_max_len
