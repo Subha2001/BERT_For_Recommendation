@@ -63,28 +63,16 @@ class BERTTrainer(AbstractTrainer):
             # genres: B x C (genre for each candidate)
             # labels: B x C (ground truth for each candidate)
             # Group scores and labels by genre (robust flattening)
-            flat_scores = scores.flatten()
-            flat_labels = labels.flatten()
-            if hasattr(genres, 'flatten'):
-                flat_genres = genres.flatten()
-            else:
-                flat_genres = torch.tensor(genres).flatten()
-
-            # Truncate all arrays to the shortest length to avoid shape mismatch
-            min_len = min(flat_scores.shape[0], flat_labels.shape[0], flat_genres.shape[0])
-            flat_scores = flat_scores[:min_len]
-            flat_labels = flat_labels[:min_len]
-            flat_genres = flat_genres[:min_len]
-
+            # Group full candidate/label rows per genre
             genre_scores_dict = {}
             genre_labels_dict = {}
-            for idx in range(min_len):
-                genre = flat_genres[idx].item()
+            for idx in range(scores.size(0)):
+                genre = genres[idx].item() if hasattr(genres, 'item') else genres[idx]
                 if genre not in genre_scores_dict:
                     genre_scores_dict[genre] = []
                     genre_labels_dict[genre] = []
-                genre_scores_dict[genre].append(flat_scores[idx].unsqueeze(0))
-                genre_labels_dict[genre].append(flat_labels[idx].unsqueeze(0))
+                genre_scores_dict[genre].append(scores[idx])  # full candidate row
+                genre_labels_dict[genre].append(labels[idx])  # full label row
 
             # Identify top 5 single genres by count
             genre_counts = {g: len(genre_scores_dict[g][0]) for g in genre_scores_dict}
@@ -158,8 +146,9 @@ class BERTTrainer(AbstractTrainer):
                 metrics_list.append(0.0)
 
             # Return as dict for base trainer compatibility
-            metrics_dict = {f'Recall@5_genre{i+1}': score for i, score in enumerate(metrics_list[:-1])}
-            metrics_dict['Recall@5_multigenre'] = metrics_list[-1]
+            # Replace NaN values with 0.0 for genre metrics
+            metrics_dict = {f'Recall@5_genre{i+1}': (0.0 if isinstance(score, float) and (score != score) else score) for i, score in enumerate(metrics_list[:-1])}
+            metrics_dict['Recall@5_multigenre'] = (0.0 if isinstance(metrics_list[-1], float) and (metrics_list[-1] != metrics_list[-1]) else metrics_list[-1])
             # Also add overall metrics for logger compatibility
             overall_metrics = recalls_and_ndcgs_for_ks(scores, labels, self.metric_ks)
             metrics_dict.update(overall_metrics)
