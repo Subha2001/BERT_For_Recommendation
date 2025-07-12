@@ -159,6 +159,9 @@ class BERTTrainer(AbstractTrainer):
             seqs, candidates, labels = batch
             scores = self.model(seqs)
             scores = scores[:, -1, :]  # B x V
+            # Print candidate index ranges and score dimensions for debugging
+            print("[DEBUG] Candidates min:", candidates.min().item(), "max:", candidates.max().item())
+            print("[DEBUG] Scores dim size:", scores.size(1))
             # Defensive check for out-of-bounds indices
             if (candidates < 0).any() or (candidates >= scores.size(1)).any():
                 raise ValueError(
