@@ -171,7 +171,9 @@ class AbstractTrainer(metaclass=ABCMeta):
             average_metrics = average_meter_set.averages()
             with open(os.path.join(self.export_root, 'logs', 'test_metrics.json'), 'w') as f:
                 json.dump(average_metrics, f, indent=4)
-            print(average_metrics)
+            # Print each metric on a new line in summary
+            for k, v in average_metrics.items():
+                print(f'{k}: {v}')
 
     def _create_optimizer(self):
         args = self.args
