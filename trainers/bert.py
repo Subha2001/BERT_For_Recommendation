@@ -43,6 +43,13 @@ class BERTTrainer(AbstractTrainer):
             seqs, candidates, labels, genres = batch # Updated newly
             scores = self.model(seqs, genres)  # B x T x V
             scores = scores[:, -1, :]  # B x V
+            print("[DEBUG] scores shape before gather:", scores.shape)
+            print("[DEBUG] candidates shape:", candidates.shape)
+            print("[DEBUG] candidates min:", candidates.min().item(), "max:", candidates.max().item())
+            print("[DEBUG] scores dim size:", scores.size(1))
+            # Check for out-of-bounds indices
+            if candidates.max().item() >= scores.size(1):
+                print("[ERROR] Candidate index out of bounds! Max candidate:", candidates.max().item(), "scores dim size:", scores.size(1))
             scores = scores.gather(1, candidates)  # B x C
             # genres: B x C (genre for each candidate)
             # labels: B x C (ground truth for each candidate)
