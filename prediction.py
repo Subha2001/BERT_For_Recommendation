@@ -194,7 +194,7 @@ if __name__ == "__main__":
     # Example usage with genre names
     user_id = 1
     movie_id = 6
-    interaction_seq = [15, 25, 35, 45, 55]  # Example sequence
+    interaction_seq = [150, 250, 305, 45, 55]  # Example sequence
     genre = ['Action', 'Sci-Fi', 'Thriller', 'Comedy', 'Action']  # Example genre sequence (as names)
     result = predict_user_genre_top5(user_id, movie_id, interaction_seq, genre)
     print("User ID:", result[0])
