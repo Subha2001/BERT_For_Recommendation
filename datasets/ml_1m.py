@@ -51,7 +51,7 @@ class ML1MDataset(AbstractDataset):
         print(f"[DEBUG] Using absolute movies_path: {movies_path}")
         if not os.path.exists(movies_path):
             print(f"[ERROR] movies.dat does not exist at: {movies_path}")
-        movies_df = pd.read_csv(movies_path, sep='::', header=None, engine='python')
+        movies_df = pd.read_csv(movies_path, sep='::', header=None, engine='python', encoding='latin-1')
         movies_df.columns = ['sid', 'title', 'genre']
         # Map each sid to a genre id (you may want to encode genres as integers)
         unique_genres = {g: i+1 for i, g in enumerate(sorted(set(movies_df['genre'])))}
