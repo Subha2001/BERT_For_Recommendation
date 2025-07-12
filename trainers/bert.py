@@ -1,12 +1,6 @@
 from .base import AbstractTrainer
 
-def debug_tensor(name, x):
-    try:
-        print(f"[DEBUG] {name}: shape={x.shape}, dtype={x.dtype}, min={x.min().item()}, max={x.max().item()}")
-        if not torch.isfinite(x).all():
-            print(f"[DEBUG] {name} contains NaN or Inf!")
-    except Exception as e:
-        print(f"[DEBUG] {name}: Could not print stats due to error: {e}")
+    # ...existing code...
 
 from .base import AbstractTrainer
 from .utils import recalls_and_ndcgs_for_ks, per_genre_recalls_and_ndcgs
@@ -51,18 +45,8 @@ class BERTTrainer(AbstractTrainer):
         if len(batch) == 4:
             seqs, candidates, labels, genres = batch # Updated newly
             scores = self.model(seqs, genres)  # B x T x V
-            debug_tensor("model output (scores)", scores)
             scores = scores[:, -1, :]  # B x V
-            debug_tensor("scores after slicing", scores)
-            debug_tensor("candidates", candidates)
-            print("[DEBUG] scores dim size:", scores.size(1))
-            # Check for out-of-bounds indices
-            if candidates.max().item() >= scores.size(1):
-                print("[ERROR] Candidate index out of bounds! Max candidate:", candidates.max().item(), "scores dim size:", scores.size(1))
-            scores = scores.gather(1, candidates)  # B x C
-            debug_tensor("scores after gather", scores)
-            debug_tensor("labels", labels)
-            debug_tensor("genres", genres)
+            # ...existing code...
             # genres: B x C (genre for each candidate)
             # labels: B x C (ground truth for each candidate)
             # Group scores and labels by genre (robust flattening)
@@ -128,9 +112,8 @@ class BERTTrainer(AbstractTrainer):
             for genre in top_5_genres:
                 score_len = len(genre_scores_dict.get(genre, []))
                 label_len = len(genre_labels_dict.get(genre, []))
-                print(f"Genre: {genre}, score list len: {score_len}, label list len: {label_len}")
                 if score_len == 0 or label_len == 0:
-                    print(f"Skipping empty genre: {genre}")
+                    # ...existing code...
                     metrics_list.append(0.0)
                     continue
                 m = per_genre_recalls_and_ndcgs(
@@ -144,9 +127,8 @@ class BERTTrainer(AbstractTrainer):
             if multi_genre is not None:
                 score_len = len(genre_scores_dict.get(multi_genre, []))
                 label_len = len(genre_labels_dict.get(multi_genre, []))
-                print(f"Multi-genre: {multi_genre}, score list len: {score_len}, label list len: {label_len}")
                 if score_len == 0 or label_len == 0:
-                    print(f"Skipping empty multi-genre: {multi_genre}")
+                    # ...existing code...
                     metrics_list.append(0.0)
                 else:
                     m = per_genre_recalls_and_ndcgs(
