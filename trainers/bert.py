@@ -97,6 +97,10 @@ class BERTTrainer(AbstractTrainer):
             else:
                 metrics_list.append(0.0)  # If no multi-genre found
 
+            # Pad metrics_list to always have 6 elements (5 single genres + 1 multi-genre)
+            while len(metrics_list) < 6:
+                metrics_list.append(0.0)
+
             # Return as dict for base trainer compatibility
             metrics_dict = {f'Recall@5_genre{i+1}': score for i, score in enumerate(metrics_list[:-1])}
             metrics_dict['Recall@5_multigenre'] = metrics_list[-1]
