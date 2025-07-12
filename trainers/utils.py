@@ -48,6 +48,9 @@ def recalls_and_ndcgs_for_ks(scores, labels, ks):
     cut = rank
     for k in sorted(ks, reverse=True):
         cut = cut[:, :k]
+        # Defensive check for out-of-bounds indices
+        if (cut >= labels_float.size(1)).any():
+            raise ValueError(f"Invalid indices in cut: max {cut.max().item()}, labels dim {labels_float.size(1)}")
         hits = labels_float.gather(1, cut)
         metrics['Recall@%d' % k] = \
             (hits.sum(1) / torch.min(torch.Tensor([k]).to(labels.device), labels.sum(1).float())).mean().cpu().item()
