@@ -128,9 +128,12 @@ class BERTTrainer(AbstractTrainer):
             while len(metrics_list) < 6:
                 metrics_list.append(0.0)
 
-            # Return only Recall@1 metrics for genres
+            # Return only Recall@1 metrics for genres and NDCG@10 for logger compatibility
             metrics_dict = {f'Recall@1_genre{i+1}': (0.0 if isinstance(score, float) and (score != score) else score) for i, score in enumerate(metrics_list[:-1])}
             metrics_dict['Recall@1_multigenre'] = (0.0 if isinstance(metrics_list[-1], float) and (metrics_list[-1] != metrics_list[-1]) else metrics_list[-1])
+            # Add overall NDCG@10
+            overall_metrics = recalls_and_ndcgs_for_ks(scores, labels, [10])
+            metrics_dict['NDCG@10'] = overall_metrics.get('NDCG@10', 0.0)
             return metrics_dict
         else:
             seqs, candidates, labels = batch
