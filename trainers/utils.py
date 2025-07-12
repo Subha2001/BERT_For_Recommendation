@@ -1,3 +1,15 @@
+def recall_at_k(pred_list, gt_set, k):
+    """
+    Compute recall@k for a single user/column.
+    pred_list: list of predicted movie ids (length >= k)
+    gt_set: set of ground truth movie ids
+    k: int
+    Returns: recall@k (float)
+    """
+    if not gt_set:
+        return None
+    pred_topk = set(pred_list[:k])
+    return len(pred_topk & gt_set) / min(len(gt_set), k)
 import torch
 
 

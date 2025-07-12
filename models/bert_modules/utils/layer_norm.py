@@ -12,15 +12,6 @@ class LayerNorm(nn.Module):
         self.eps = eps
 
     def forward(self, x):
-        if torch.isnan(x).any() or torch.isinf(x).any():
-            print("[DEBUG] NaN or Inf detected in input to LayerNorm!")
-            print(f"[DEBUG] x: {x}")
-            raise ValueError("NaN or Inf in input to LayerNorm")
         mean = x.mean(-1, keepdim=True)
         std = x.std(-1, keepdim=True)
-        out = self.a_2 * (x - mean) / (std + self.eps) + self.b_2
-        if torch.isnan(out).any() or torch.isinf(out).any():
-            print("[DEBUG] NaN or Inf detected in output of LayerNorm!")
-            print(f"[DEBUG] out: {out}")
-            raise ValueError("NaN or Inf in output of LayerNorm")
-        return out
+        return self.a_2 * (x - mean) / (std + self.eps) + self.b_2

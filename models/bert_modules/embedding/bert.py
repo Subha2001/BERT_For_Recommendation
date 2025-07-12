@@ -37,8 +37,5 @@ class BERTEmbedding(nn.Module):
     def forward(self, sequence, genre=None):
         x = self.token(sequence) + self.position(sequence)
         if self.genre is not None and genre is not None:
-            # Ensure genre and sequence shapes match
-            if genre.shape != sequence.shape:
-                raise RuntimeError(f"Shape mismatch: sequence shape {sequence.shape}, genre shape {genre.shape}. Genre tensor must match sequence tensor.")
             x = x + self.genre(genre)
         return self.dropout(x)

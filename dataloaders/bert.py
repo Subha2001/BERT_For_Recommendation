@@ -13,34 +13,18 @@ class BertDataloader(AbstractDataloader):
         self.mask_prob = args.bert_mask_prob
         self.CLOZE_MASK_TOKEN = self.item_count + 1
 
-        # Always load sid2genre from dataset if available
-        if hasattr(dataset, 'sid2genre'):
-            self.sid2genre = dataset.sid2genre
-        else:
-            # fallback: all genres 0
-            all_sids = set()
-            for user_seq in self.train.values():
-                all_sids.update(user_seq)
-            self.sid2genre = {sid: 0 for sid in all_sids}
-
         code = args.train_negative_sampler_code
         train_negative_sampler = negative_sampler_factory(code, self.train, self.val, self.test,
                                                           self.user_count, self.item_count,
                                                           args.train_negative_sample_size,
                                                           args.train_negative_sampling_seed,
                                                           self.save_folder)
-        # Pass sid2genre to sampler if possible
-        if hasattr(train_negative_sampler, 'sid2genre'):
-            train_negative_sampler.sid2genre = self.sid2genre
-
         code = args.test_negative_sampler_code
         test_negative_sampler = negative_sampler_factory(code, self.train, self.val, self.test,
                                                          self.user_count, self.item_count,
                                                          args.test_negative_sample_size,
                                                          args.test_negative_sampling_seed,
                                                          self.save_folder)
-        if hasattr(test_negative_sampler, 'sid2genre'):
-            test_negative_sampler.sid2genre = self.sid2genre
 
         self.train_negative_samples = train_negative_sampler.get_negative_samples()
         self.test_negative_samples = test_negative_sampler.get_negative_samples()
@@ -179,13 +163,12 @@ class BertEvalDataset(data_utils.Dataset):
         candidates = answer + negs
         labels = [1] * len(answer) + [0] * len(negs)
         seq = seq + [self.mask_token]
+        genres = genres + [0]  # genre for mask token
         # Truncate all to max_len
         seq = seq[-self.max_len:]
+        genres = genres[-self.max_len:]
+        # Pad all to max_len
         padding_len = self.max_len - len(seq)
         seq = [0] * padding_len + seq
-        # Get genres for each candidate
-        candidate_genres = [self.sid2genre.get(s, 0) for s in candidates]
-        # Get genres for sequence
-        sequence_genres = [self.sid2genre.get(s, 0) for s in seq]
-        # ...existing code...
-        return torch.LongTensor(seq), torch.LongTensor(candidates), torch.LongTensor(labels), torch.LongTensor(sequence_genres), torch.LongTensor(candidate_genres)
+        genres = [0] * padding_len + genres
+        return torch.LongTensor(seq), torch.LongTensor(candidates), torch.LongTensor(labels), torch.LongTensor(genres)
