@@ -103,6 +103,10 @@ class BERTTrainer(AbstractTrainer):
             # Also add overall metrics for logger compatibility
             overall_metrics = recalls_and_ndcgs_for_ks(scores, labels, self.metric_ks)
             metrics_dict.update(overall_metrics)
+            # Ensure all expected keys are present for logger compatibility
+            for k in self.metric_ks:
+                metrics_dict.setdefault(f'NDCG@{k}', 0.0)
+                metrics_dict.setdefault(f'Recall@{k}', 0.0)
             return metrics_dict
         else:
             seqs, candidates, labels = batch
