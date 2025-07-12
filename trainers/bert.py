@@ -81,6 +81,7 @@ class BERTTrainer(AbstractTrainer):
             # Debug: print top 5 genres selected
             print(f"Top 5 genres selected: {top_5_genres}")
 
+
             # Truncate all arrays to the shortest length to avoid shape mismatch
             min_len = min(flat_scores.shape[0], flat_labels.shape[0], flat_genres.shape[0])
             flat_scores = flat_scores[:min_len]
@@ -95,11 +96,11 @@ class BERTTrainer(AbstractTrainer):
                     genre_scores_dict[genre] = []
                     genre_labels_dict[genre] = []
                 genre_scores_dict[genre].append(flat_scores[idx].unsqueeze(0))
-            # Identify top 5 single genres by count
-            genre_counts = {g: len(genre_scores_dict[g][0]) for g in genre_scores_dict}
-            top_5_genres = sorted(genre_counts, key=genre_counts.get, reverse=True)[:5]
+                genre_labels_dict[genre].append(flat_labels[idx].unsqueeze(0))
 
-            # Debug: print top 5 genres selected
+            # Identify top 5 single genres by count
+            genre_counts = {g: len(genre_scores_dict[g]) for g in genre_scores_dict}
+            top_5_genres = sorted(genre_counts, key=genre_counts.get, reverse=True)[:5]
             print(f"Top 5 genres selected: {top_5_genres}")
 
             # Identify multi-genre (assume it contains '|' in the genre name)
@@ -108,16 +109,10 @@ class BERTTrainer(AbstractTrainer):
                 if isinstance(g, str) and '|' in g:
                     multi_genre = g
                     break
-                # If genre is int or other type, you may need to adjust this logic
-            for g in genre_scores_dict:
-                if isinstance(g, str) and '|' in g:
-                    multi_genre = g
-                    break
-                # If genre is int or other type, you may need to adjust this logic
 
             print("Full genre distribution in batch:")
             for g in genre_scores_dict:
-                print(f"Genre {g}: {len(genre_scores_dict[g])} samples")
+                print(f"Genre {g}: {len(genre_scores_dict[g])} samples, labels: {len(genre_labels_dict[g])}")
 
             metrics_list = []
             # Compute Recall@5 for top 5 single genres
