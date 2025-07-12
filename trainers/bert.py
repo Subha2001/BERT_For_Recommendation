@@ -100,6 +100,9 @@ class BERTTrainer(AbstractTrainer):
             # Return as dict for base trainer compatibility
             metrics_dict = {f'Recall@5_genre{i+1}': score for i, score in enumerate(metrics_list[:-1])}
             metrics_dict['Recall@5_multigenre'] = metrics_list[-1]
+            # Also add overall metrics for logger compatibility
+            overall_metrics = recalls_and_ndcgs_for_ks(scores, labels, self.metric_ks)
+            metrics_dict.update(overall_metrics)
             return metrics_dict
         else:
             seqs, candidates, labels = batch
