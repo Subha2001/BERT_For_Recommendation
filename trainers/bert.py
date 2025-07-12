@@ -159,6 +159,13 @@ class BERTTrainer(AbstractTrainer):
             seqs, candidates, labels = batch
             scores = self.model(seqs)
             scores = scores[:, -1, :]  # B x V
+            # Defensive check for out-of-bounds indices
+            if (candidates < 0).any() or (candidates >= scores.size(1)).any():
+                raise ValueError(
+                    f"Invalid candidate indices detected! "
+                    f"Min: {candidates.min().item()}, Max: {candidates.max().item()}, "
+                    f"Scores dim size: {scores.size(1)}"
+                )
             scores = scores.gather(1, candidates)  # B x C
             metrics = recalls_and_ndcgs_for_ks(scores, labels, self.metric_ks)
         return metrics
