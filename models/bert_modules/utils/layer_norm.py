@@ -1,3 +1,11 @@
+import torch
+def debug_tensor(name, x):
+    try:
+        print(f"[DEBUG] {name}: shape={x.shape}, dtype={x.dtype}, min={x.min().item()}, max={x.max().item()}")
+        if hasattr(x, 'isfinite') and not torch.isfinite(x).all():
+            print(f"[DEBUG] {name} contains NaN or Inf!")
+    except Exception as e:
+        print(f"[DEBUG] {name}: Could not print stats due to error: {e}")
 import torch.nn as nn
 import torch
 
@@ -12,12 +20,9 @@ class LayerNorm(nn.Module):
         self.eps = eps
 
     def forward(self, x):
-        # Debug: print tensor stats before CUDA operation
-        if not torch.isfinite(x).all():
-            print("[LayerNorm DEBUG] x contains NaN or Inf values!")
-            print("x min:", x.min().item(), "x max:", x.max().item())
-            print("x shape:", x.shape)
-            print("x dtype:", x.dtype)
+        debug_tensor("LayerNorm input x", x)
         mean = x.mean(-1, keepdim=True)
         std = x.std(-1, keepdim=True)
-        return self.a_2 * (x - mean) / (std + self.eps) + self.b_2
+        out = self.a_2 * (x - mean) / (std + self.eps) + self.b_2
+        debug_tensor("LayerNorm output", out)
+        return out

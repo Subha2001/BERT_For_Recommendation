@@ -1,3 +1,11 @@
+import torch
+def debug_tensor(name, x):
+    try:
+        print(f"[DEBUG] {name}: shape={x.shape}, dtype={x.dtype}, min={x.min().item()}, max={x.max().item()}")
+        if hasattr(x, 'isfinite') and not torch.isfinite(x).all():
+            print(f"[DEBUG] {name} contains NaN or Inf!")
+    except Exception as e:
+        print(f"[DEBUG] {name}: Could not print stats due to error: {e}")
 from .base import BaseModel
 from .bert_modules.bert import BERT
 
@@ -16,5 +24,11 @@ class BERTModel(BaseModel):
     
     #  Updated newly
     def forward(self, x, genre=None):
+        debug_tensor("BERTModel input x", x)
+        if genre is not None:
+            debug_tensor("BERTModel input genre", genre)
         x = self.bert(x, genre)
-        return self.out(x)
+        debug_tensor("BERTModel output from bert", x)
+        out = self.out(x)
+        debug_tensor("BERTModel output final", out)
+        return out

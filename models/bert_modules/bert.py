@@ -1,3 +1,11 @@
+import torch
+def debug_tensor(name, x):
+    try:
+        print(f"[DEBUG] {name}: shape={x.shape}, dtype={x.dtype}, min={x.min().item()}, max={x.max().item()}")
+        if hasattr(x, 'isfinite') and not torch.isfinite(x).all():
+            print(f"[DEBUG] {name} contains NaN or Inf!")
+    except Exception as e:
+        print(f"[DEBUG] {name}: Could not print stats due to error: {e}")
 from torch import nn as nn
 
 from models.bert_modules.embedding import BERTEmbedding
@@ -32,15 +40,16 @@ class BERT(nn.Module):
 
     # Updated newly
     def forward(self, x, genre=None):
+        debug_tensor("BERT input x", x)
+        if genre is not None:
+            debug_tensor("BERT input genre", genre)
         mask = (x > 0).unsqueeze(1).repeat(1, x.size(1), 1).unsqueeze(1)
-
-        # embedding the indexed sequence to sequence of vectors
-        x = self.embedding(x, genre) # Updated newly
-
-        # running over multiple transformer blocks
-        for transformer in self.transformer_blocks:
+        debug_tensor("BERT mask", mask)
+        x = self.embedding(x, genre)
+        debug_tensor("BERT after embedding", x)
+        for i, transformer in enumerate(self.transformer_blocks):
             x = transformer.forward(x, mask)
-
+            debug_tensor(f"BERT after transformer block {i}", x)
         return x
 
     def init_weights(self):

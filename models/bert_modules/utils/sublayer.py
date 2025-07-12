@@ -1,3 +1,11 @@
+import torch
+def debug_tensor(name, x):
+    try:
+        print(f"[DEBUG] {name}: shape={x.shape}, dtype={x.dtype}, min={x.min().item()}, max={x.max().item()}")
+        if hasattr(x, 'isfinite') and not torch.isfinite(x).all():
+            print(f"[DEBUG] {name} contains NaN or Inf!")
+    except Exception as e:
+        print(f"[DEBUG] {name}: Could not print stats due to error: {e}")
 import torch.nn as nn
 from .layer_norm import LayerNorm
 
@@ -14,5 +22,13 @@ class SublayerConnection(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x, sublayer):
-        "Apply residual connection to any sublayer with the same size."
-        return x + self.dropout(sublayer(self.norm(x)))
+        debug_tensor("SublayerConnection input x", x)
+        normed = self.norm(x)
+        debug_tensor("SublayerConnection after norm", normed)
+        sublayer_out = sublayer(normed)
+        debug_tensor("SublayerConnection after sublayer", sublayer_out)
+        dropped = self.dropout(sublayer_out)
+        debug_tensor("SublayerConnection after dropout", dropped)
+        out = x + dropped
+        debug_tensor("SublayerConnection output", out)
+        return out
