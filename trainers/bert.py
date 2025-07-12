@@ -85,12 +85,16 @@ class BERTTrainer(AbstractTrainer):
 
             # ...existing code...
 
-            # Identify multi-genre (assume it contains '|' in the genre name)
-            multi_genre = None
-            for g in genre_scores_dict:
-                if isinstance(g, str) and '|' in g:
-                    multi_genre = g
-                    break
+            # Identify multi-genre: items with more than one genre (if genres is 2D and sum along dim=1 > 1)
+            multi_genre_scores = []
+            multi_genre_labels = []
+            if genres.dim() == 2:
+                for idx in range(scores.size(0)):
+                    # Count nonzero genres for this item
+                    genre_count = (genres[idx] > 0).sum().item()
+                    if genre_count > 1:
+                        multi_genre_scores.append(scores[idx])
+                        multi_genre_labels.append(labels[idx])
 
             # ...existing code...
 
@@ -111,19 +115,13 @@ class BERTTrainer(AbstractTrainer):
                 metrics_list.append(m[genre].get('Recall@5', 0.0))
 
             # Compute Recall@5 for multi-genre
-            if multi_genre is not None:
-                score_len = len(genre_scores_dict.get(multi_genre, []))
-                label_len = len(genre_labels_dict.get(multi_genre, []))
-                if score_len == 0 or label_len == 0:
-                    # ...existing code...
-                    metrics_list.append(0.0)
-                else:
-                    m = per_genre_recalls_and_ndcgs(
-                        {multi_genre: torch.stack(genre_scores_dict[multi_genre], dim=0)},
-                        {multi_genre: torch.stack(genre_labels_dict[multi_genre], dim=0)},
-                        self.metric_ks
-                    )
-                    metrics_list.append(m[multi_genre].get('Recall@5', 0.0))
+            if len(multi_genre_scores) > 0 and len(multi_genre_labels) > 0:
+                m = per_genre_recalls_and_ndcgs(
+                    {'multi_genre': torch.stack(multi_genre_scores, dim=0)},
+                    {'multi_genre': torch.stack(multi_genre_labels, dim=0)},
+                    self.metric_ks
+                )
+                metrics_list.append(m['multi_genre'].get('Recall@5', 0.0))
             else:
                 metrics_list.append(0.0)  # If no multi-genre found
 
