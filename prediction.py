@@ -199,12 +199,13 @@ def predict_top5_genres(user_id, interaction_seq, model_path='downloaded_model/b
 
 if __name__ == "__main__":
     # Example usage with genre names
-    user_id = 1
-    movie_id = 6
-    interaction_seq = [150, 250, 305, 45, 55]  # Example sequence
-    genre = ['Action', 'Sci-Fi', 'Thriller', 'Comedy', 'Action']  # Example genre sequence (as names)
+    user_id = 100
+    movie_id = 400
+    interaction_seq = [250, 250, 305, 45, 55]  # Example sequence
+    genre = ['War', 'Sci-Fi', 'Thriller', 'Comedy', 'Action']  # Example genre sequence (as names)
     result = predict_user_genre_top5(user_id, movie_id, interaction_seq, genre)
     print("User ID:", result[0])
+    print("Movie ID:", movie_id)
     print("Genre:", result[1])
     print("Top 5 Movie IDs:", result[2])
 
