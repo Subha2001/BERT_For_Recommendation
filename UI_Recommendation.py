@@ -1,11 +1,15 @@
 import streamlit as st
 import numpy as np
+import pandas as pd
+import re, io, sys
 
-import streamlit as st
-import numpy as np
-from prediction import predict_user_genre_top5, predict_top5_genres, predict_top5_per_genre, genre_name_to_id, genre_id_to_name
+from prediction import (
+    predict_user_genre_top5,
+    predict_top5_genres,
+    predict_top5_per_genre,
+    genre_name_to_id)
 
-# Set background color to black and style
+# ─── Style ────────────────────────────────────────────────────────────────────
 st.markdown(
     """
     <style>
@@ -36,7 +40,6 @@ st.markdown(
 
 st.title(":clapper: BERT Movie Recommendation")
 
-
 st.markdown("""
 <div style='background-color:#222;padding:16px;border-radius:10px;'>
 <h4 style='color:#fff;'>Enter User and Movie Details</h4>
@@ -55,16 +58,22 @@ label, .stTextInput label, .stNumberInput label, .stSelectbox label {
 </style>
 """, unsafe_allow_html=True)
 
-
 col1, col2 = st.columns(2)
 with col1:
-    user_id = st.number_input("User ID", min_value=1, value=100, step=1, format="%d", key="user_id", label_visibility="visible")
+    user_id = st.number_input(
+        "User ID", min_value=1, value=100, step=1, format="%d", key="user_id"
+    )
 with col2:
-    movie_id = st.number_input("Movie ID", min_value=1, value=1000, step=1, format="%d", key="movie_id", label_visibility="visible")
+    movie_id = st.number_input(
+        "Movie ID", min_value=1, value=1000, step=1, format="%d", key="movie_id"
+    )
 
-interaction_seq = st.text_input("Interaction Sequence (comma-separated Movie IDs)", value="9,23,66,188,317", key="interaction_seq", label_visibility="visible")
+interaction_seq = st.text_input(
+    "Interaction Sequence (comma-separated Movie IDs)",
+    value="9,23,66,188,317",
+    key="interaction_seq",
+)
 
-# Genre dropdowns
 all_genres = list(genre_name_to_id.keys())
 genre_inputs = []
 st.markdown("<br><b style='color:#fff;'>Select 5 genres:</b>", unsafe_allow_html=True)
@@ -72,66 +81,88 @@ cols = st.columns(5)
 for i in range(5):
     with cols[i]:
         genre = st.selectbox(
-            f"Genre {i+1}",
-            all_genres,
-            key=f"genre_{i}",
-            label_visibility="visible",
-            format_func=lambda x: x
+            f"Genre {i+1}", all_genres, key=f"genre_{i}"
         )
         genre_inputs.append(genre)
-
 st.markdown("<br>", unsafe_allow_html=True)
 
+# ─── Generic parser for any 2-line “User ID … | …” table ────────────────────
+def parse_genre_table(text_block: str) -> pd.DataFrame:
+    """
+    Parses a two-line block:
+      Line1: headers, e.g. 'User ID Horror Adventure ... Romance | Comedy'
+      Line2: all ints in column-major order (first user IDs, then genre blocks)
+    Returns DataFrame in row-major form.
+    """
+    # Split header vs data
+    hdr, data = text_block.strip().split("\n", 1)
+    toks, cols = hdr.split(), []
+    i = 0
+    # Merge User+ID and any 'A | B'
+    while i < len(toks):
+        if toks[i] == "User" and i + 1 < len(toks) and toks[i+1] == "ID":
+            cols.append("User ID"); i += 2; continue
+        if i + 2 < len(toks) and toks[i+1] == "|":
+            cols.append(f"{toks[i]} | {toks[i+2]}"); i += 3; continue
+        cols.append(toks[i]); i += 1
+
+    # Extract all integers in appearance order
+    all_ints = list(map(int, re.findall(r"\d+", data)))
+    n_cols = len(cols)
+    if len(all_ints) % n_cols != 0:
+        raise ValueError(f"{len(all_ints)} ints for {n_cols} columns")
+    n_rows = len(all_ints) // n_cols
+
+    # Reconstruct rows from column-major ordering
+    rows = []
+    for r in range(n_rows):
+        row = [all_ints[r + n_rows*c] for c in range(n_cols)]
+        rows.append(row)
+
+    return pd.DataFrame(rows, columns=cols)
+
+# ─── Main Callback ───────────────────────────────────────────────────────────
 if st.button("Get Recommendations"):
-    # Parse interaction sequence
+    # 1) Parse interaction seq
     try:
-        interaction_seq_list = [int(x.strip()) for x in interaction_seq.split(",") if x.strip()]
+        interaction_seq_list = [
+            int(x.strip()) for x in interaction_seq.split(",") if x.strip()
+        ]
     except Exception as e:
         st.error(f"Invalid interaction sequence: {e}")
         st.stop()
 
-    # Predict top 5 movies for user and genres
-    user_result = predict_user_genre_top5(user_id, movie_id, interaction_seq_list, genre_inputs)
-    # Predict top 5 genres for the user
+    # 2) Run model calls
+    _ = predict_user_genre_top5(
+        user_id, movie_id, interaction_seq_list, genre_inputs
+    )
     top5_genres = predict_top5_genres(user_id, interaction_seq_list)
-    top5_genre_names = [genre_id_to_name.get(g, str(g)) for g in top5_genres]
 
-    # Get table output (User ID, 5 genres, 1 multi-genre)
-    st.subheader(":sparkles: Recommendations Table")
-    # Use the same logic as predict_top5_per_genre to get the table
-    import io
-    import sys as _sys
+    # 3) Capture raw two-line output
     buf = io.StringIO()
-    _stdout = _sys.stdout
-    _sys.stdout = buf
+    old_stdout = sys.stdout
+    sys.stdout = buf
     predict_top5_per_genre(user_id, interaction_seq_list, top5_genres)
-    _sys.stdout = _stdout
-    table_str = buf.getvalue()
-    # Parse table
-    lines = table_str.strip().split("\n")
-    if len(lines) >= 2:
-        header = lines[0].split("\t")
-        row = lines[1].split("\t")
-        # Each genre column is a comma-separated list of 5 movie IDs
-        genre_cols = header[5:-1]
-        multi_col = header[-1]
-        genre_movies = [row[5+i].split(", ") for i in range(len(genre_cols))]
-        multi_movies = row[-1].split(", ")
-        # Build table: 5 rows, each row is [User ID, Genre1 Movie, ..., Genre5 Movie, Multi-Genre Movie]
-        table_data = []
-        for i in range(5):
-            row_data = [str(user_id)]
-            for g in genre_movies:
-                row_data.append(g[i] if i < len(g) else "")
-            row_data.append(multi_movies[i] if i < len(multi_movies) else "")
-            table_data.append(row_data)
-        # Table headers: User ID, Genre1, Genre2, ..., Multi-Genre
-        table_headers = ["User ID"] + genre_cols + [multi_col]
-        st.table(
-            {h: [row[i] for row in table_data] for i, h in enumerate(table_headers)}
-        )
-    else:
-        st.write(table_str)
+    sys.stdout = old_stdout
 
+    raw_lines = buf.getvalue().strip().splitlines()
+    if len(raw_lines) < 2:
+        st.error("No data returned from predict_top5_per_genre()")
+        st.stop()
+
+    # 4) Parse into DataFrame
+    text_block = "\n".join(raw_lines[:2])
+    try:
+        df = parse_genre_table(text_block)
+    except Exception as e:
+        st.error(f"Failed to parse recommendations table: {e}")
+        st.stop()
+
+    # 5) Insert Rank and render
+    df.insert(0, "Rank", range(1, len(df) + 1))
+    st.subheader(":sparkles: Recommendation Table")
+    st.table(df)
+
+    # 6) Optional raw output
     st.subheader(":page_facing_up: Raw Output")
-    st.text(table_str)
+    st.text("\n".join(raw_lines))

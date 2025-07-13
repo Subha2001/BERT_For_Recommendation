@@ -64,7 +64,14 @@ def load_model(model_path):
     state_dict = torch.load(model_path, map_location='cpu', weights_only=True)
     if 'model_state_dict' in state_dict:
         state_dict = state_dict['model_state_dict']
-    model.load_state_dict(state_dict)
+    # Filter out genre embedding if shape mismatch
+    model_state = model.state_dict()
+    filtered_state = {}
+    for k, v in state_dict.items():
+        if k in model_state:
+            if model_state[k].shape == v.shape:
+                filtered_state[k] = v
+    model.load_state_dict(filtered_state, strict=False)
     return model
 
 def predict_user_genre_top5(user_id, movie_id, interaction_seq, genre, model_path='downloaded_model/best_acc_model.pth'):
@@ -162,7 +169,7 @@ def predict_top5_per_genre(user_id, interaction_seq, genre_list, model_path='dow
         multi_pair_name = "Multi-Genre"
 
     # Print as table with user_id repeated 5 times
-    header = ["User ID"] * 5 + [genre_id_to_name.get(gid, str(gid)) for gid in genre_ids] + [multi_pair_name]
+    header = ["User ID"] + [genre_id_to_name.get(gid, str(gid)) for gid in genre_ids] + [multi_pair_name]
     print("\t".join(header))
     row = [str(user_id)] * 5 + [", ".join(map(str, genre_to_top5[gid])) for gid in genre_ids] + [", ".join(map(str, multi_pair_movies))]
     print("\t".join(row))
