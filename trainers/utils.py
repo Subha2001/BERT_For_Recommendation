@@ -1,3 +1,6 @@
+#####################################################################################
+# Added newly
+#####################################################################################
 def recall_at_k(pred_list, gt_set, k):
     """
     Compute recall@k for a single user/column.
@@ -64,8 +67,9 @@ def recalls_and_ndcgs_for_ks(scores, labels, ks):
 
     return metrics
 
-
+# #####################################################################################
 # New function for per-genre and multi-genre evaluation
+# #####################################################################################
 def per_genre_recalls_and_ndcgs(scores_dict, labels_dict, ks):
     """
     scores_dict: dict of {genre: scores_tensor}

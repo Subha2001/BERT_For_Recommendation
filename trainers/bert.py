@@ -24,6 +24,9 @@ class BERTTrainer(AbstractTrainer):
         pass
 
     def calculate_loss(self, batch):
+        ##############################################################################
+        # Made changes in Calculate loss for BERT model
+        ##############################################################################
         # Support genre input: batch = (seqs, labels, genres) or (seqs, labels)
         if len(batch) == 3:
             seqs, labels, genres = batch  # Updated newly
@@ -43,6 +46,9 @@ class BERTTrainer(AbstractTrainer):
         return loss
 
     def calculate_metrics(self, batch):
+        ##############################################################################
+        # Made changes in Calculate metrics for BERT model
+        ##############################################################################
         # Support genre input: batch = (seqs, candidates, labels, genres) or (seqs, candidates, labels)
         if len(batch) == 4:
             seqs, candidates, labels, genres = batch  # Updated newly
