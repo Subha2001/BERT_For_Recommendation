@@ -25,17 +25,25 @@ class BERTEmbedding(nn.Module):
         # self.segment = SegmentEmbedding(embed_size=self.token.embedding_dim)
         self.dropout = nn.Dropout(p=dropout)
         self.embed_size = embed_size
+        ####################################################################################
         # Added newly for genre embedding
         # num_genres: number of genres, if None, genre embedding is not used
         # genre embedding is used to add genre information to the sequence
+        ####################################################################################
+        # If num_genres is not None, genre embedding is created
+        # If num_genres is None, genre embedding is not created
+        # This allows for flexibility in using genre information
         if num_genres is not None:
             self.genre = nn.Embedding(num_genres, embed_size, padding_idx=0)
         else:
             self.genre = None
         
-    # Updated newly
     def forward(self, sequence, genre=None):
         x = self.token(sequence) + self.position(sequence)
+        ####################################################################################
+        # If genre is provided and genre embedding exists, add genre embedding to the output
+        # This allows for the addition of genre information to the sequence embedding
+        ####################################################################################
         if self.genre is not None and genre is not None:
             x = x + self.genre(genre)
         return self.dropout(x)

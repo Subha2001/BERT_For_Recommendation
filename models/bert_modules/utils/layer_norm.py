@@ -1,5 +1,4 @@
 import torch
-    # ...existing code...
 import torch.nn as nn
 import torch
 
@@ -16,5 +15,6 @@ class LayerNorm(nn.Module):
     def forward(self, x):
         mean = x.mean(-1, keepdim=True)
         std = x.std(-1, keepdim=True)
-        out = self.a_2 * (x - mean) / (std + self.eps) + self.b_2
+        out = self.a_2 * (x - mean) / (std + self.eps) + self.b_2 # Normalize
+        # Added variable and then returning the output
         return out

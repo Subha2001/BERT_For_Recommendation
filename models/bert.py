@@ -1,5 +1,4 @@
 import torch
-    # ...existing code...
 from .base import BaseModel
 from .bert_modules.bert import BERT
 
@@ -16,7 +15,11 @@ class BERTModel(BaseModel):
     def code(cls):
         return 'bert'
     
-    #  Updated newly
+    #####################################################################
+    # Forward pass
+    # x: input tensor, genre: optional genre tensor
+    # Returns: output tensor after passing through BERT and linear layer
+    #####################################################################
     def forward(self, x, genre=None):
         x = self.bert(x, genre)
         out = self.out(x)

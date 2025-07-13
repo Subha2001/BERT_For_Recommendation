@@ -1,5 +1,4 @@
 import torch
-    # ...existing code...
 from torch import nn as nn
 
 from models.bert_modules.embedding import BERTEmbedding
@@ -22,6 +21,10 @@ class BERT(nn.Module):
         hidden = args.bert_hidden_units
         self.hidden = hidden
         dropout = args.bert_dropout
+        # num_genres is an optional argument, default is None
+        # If provided, it will be used for genre embedding
+        # If not provided, genre embedding will not be used
+        # This is useful for models that do not use genre information
         num_genres = getattr(args, 'num_genres', None)  # Added newly
 
         # embedding for BERT, sum of positional, segment, token embeddings
@@ -32,7 +35,11 @@ class BERT(nn.Module):
         self.transformer_blocks = nn.ModuleList(
             [TransformerBlock(hidden, heads, hidden * 4, dropout) for _ in range(n_layers)])
 
-    # Updated newly
+    ###################################################################################
+    # Forward pass
+    # x: input sequence, shape [batch_size, seq_len]
+    # genre: genre information, shape [batch_size, seq_len] (optional)
+    ###################################################################################
     def forward(self, x, genre=None):
         mask = (x > 0).unsqueeze(1).repeat(1, x.size(1), 1).unsqueeze(1)
         x = self.embedding(x, genre)

@@ -1,5 +1,4 @@
 import torch
-    # The debug_tensor function has been removed as part of the cleanup.
 import torch.nn as nn
 
 from .attention import MultiHeadedAttention
@@ -30,5 +29,5 @@ class TransformerBlock(nn.Module):
     def forward(self, x, mask):
         x = self.input_sublayer(x, lambda _x: self.attention.forward(_x, _x, _x, mask=mask))
         x = self.output_sublayer(x, self.feed_forward)
-        out = self.dropout(x)
+        out = self.dropout(x) # dropout after output sublayer [Added newly] 
         return out
