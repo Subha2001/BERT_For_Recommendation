@@ -32,7 +32,9 @@ class ML1MDataset(AbstractDataset):
         df.columns = ['uid', 'sid', 'rating', 'timestamp']
         return df
     
+    ###########################################################################
     # Added newly
+    ###########################################################################
     def load_ratings_with_genres(self):
         folder_path = self._get_rawdata_folder_path()
         ratings_path = folder_path.joinpath('ratings.dat')
@@ -57,5 +59,8 @@ class ML1MDataset(AbstractDataset):
         unique_genres = {g: i+1 for i, g in enumerate(sorted(set(movies_df['genre'])))}
         sid2genre = {row['sid']: unique_genres.get(row['genre'], 0) for _, row in movies_df.iterrows()}
         return sid2genre
+    ###########################################################################
+    # End of newly added code
+    ###########################################################################
 
 

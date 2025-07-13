@@ -51,6 +51,9 @@ class BertDataloader(AbstractDataloader):
         return dataloader
 
     def _get_train_dataset(self):
+        ###########################################################################
+        # Create BertTrainDataset with sid2genre
+        ###########################################################################
         # sid2genre should be available in self or constructed from dataset
         sid2genre = getattr(self, 'sid2genre', None)
         if sid2genre is None:
@@ -62,6 +65,9 @@ class BertDataloader(AbstractDataloader):
                 for user_seq in self.train.values():
                     all_sids.update(user_seq)
                 sid2genre = {sid: 0 for sid in all_sids}
+                ###########################################################################
+                # End of newly added code
+                ###########################################################################
         dataset = BertTrainDataset(self.train, sid2genre, self.max_len, self.mask_prob, self.CLOZE_MASK_TOKEN, self.item_count, self.rng)
         return dataset
 
@@ -80,6 +86,9 @@ class BertDataloader(AbstractDataloader):
 
     def _get_eval_dataset(self, mode):
         answers = self.val if mode == 'val' else self.test
+        ###########################################################################
+        # Create BertEvalDataset with sid2genre
+        ###########################################################################
         sid2genre = getattr(self, 'sid2genre', None)
         if sid2genre is None:
             if hasattr(self, 'dataset') and hasattr(self.dataset, 'sid2genre'):
@@ -90,6 +99,9 @@ class BertDataloader(AbstractDataloader):
                 for user_seq in self.train.values():
                     all_sids.update(user_seq)
                 sid2genre = {sid: 0 for sid in all_sids}
+                ###########################################################################
+                # End of newly added code
+                ###########################################################################
         dataset = BertEvalDataset(self.train, sid2genre, answers, self.max_len, self.CLOZE_MASK_TOKEN, self.test_negative_samples)
         return dataset
 
