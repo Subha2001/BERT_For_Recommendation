@@ -91,6 +91,7 @@ class AbstractTrainer(metaclass=ABCMeta):
 
             self.optimizer.step()
 
+            # Update learning rate if using a scheduler to remove warning
             if self.args.enable_lr_schedule:
                 self.lr_scheduler.step()
 
