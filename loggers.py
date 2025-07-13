@@ -83,6 +83,7 @@ class MetricGraphPrinter(AbstractBaseLogger):
         self.group_name = group_name
         self.writer = writer
 
+        # Ensure the group name is set correctly
     def log(self, *args, **kwargs):
         if self.key in kwargs:
             self.writer.add_scalar(self.group_name + '/' + self.graph_label, kwargs[self.key], kwargs['accum_iter'])
