@@ -34,9 +34,9 @@ class BERTEmbedding(nn.Module):
         # If num_genres is None, genre embedding is not created
         # This allows for flexibility in using genre information
         if num_genres is not None:
-            self.genre = nn.Embedding(num_genres, embed_size, padding_idx=0)
+            self.genre = nn.Embedding(num_genres, embed_size, padding_idx=0) # Create genre embedding that maps genre IDs to embedding vectors
         else:
-            self.genre = None
+            self.genre = None # If num_genres is None, genre embedding is set to None
         
     def forward(self, sequence, genre=None):
         x = self.token(sequence) + self.position(sequence)

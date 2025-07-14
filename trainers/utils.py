@@ -1,3 +1,5 @@
+import torch
+
 #####################################################################################
 # Added newly
 #####################################################################################
@@ -9,12 +11,18 @@ def recall_at_k(pred_list, gt_set, k):
     k: int
     Returns: recall@k (float)
     """
-    if not gt_set:
-        return None
-    pred_topk = set(pred_list[:k])
+    # Defensive check: if there are no ground-truth items, recall is undefined
+    if not gt_set: # Ground truth set empty?
+        return None # Return None to indicate we can’t compute recall
+    
+    # Take only the top-k predictions
+    pred_topk = set(pred_list[:k]) # slice first k items and convert to set
+    # Compute intersection between predicted and actual, normalize by min(|gt|, k)
     return len(pred_topk & gt_set) / min(len(gt_set), k)
-import torch
 
+###########################################################################
+# End of newly added code
+###########################################################################
 
 def recall(scores, labels, k):
     scores = scores
@@ -77,19 +85,33 @@ def per_genre_recalls_and_ndcgs(scores_dict, labels_dict, ks):
     ks: list of k values
     Returns: dict of metrics for each genre and overall
     """
+    # Initialize dictionary to store metrics per genre
     genre_metrics = {}
+    # Iterate over each genre and compute metrics
     for genre in scores_dict:
-        genre_scores = scores_dict[genre]
-        genre_labels = labels_dict[genre]
-        genre_metrics[genre] = recalls_and_ndcgs_for_ks(genre_scores, genre_labels, ks)
+        genre_scores = scores_dict[genre] # Tensor of scores for the genre
+        genre_labels = labels_dict[genre] # Tensor of labels for the genre
+        genre_metrics[genre] = recalls_and_ndcgs_for_ks(genre_scores, genre_labels, ks) # Compute metrics for the genre
+    
     # Optionally, compute overall metrics by averaging across genres
-    overall_metrics = {}
+    overall_metrics = {} # Initialize overall metrics
+    # Iterate over each k value to compute overall recall and NDCG
     for k in ks:
+        # Collect recall and NDCG for each genre for the current k
         recall_list = [genre_metrics[g]['Recall@%d' % k] for g in genre_metrics if 'Recall@%d' % k in genre_metrics[g]]
         ndcg_list = [genre_metrics[g]['NDCG@%d' % k] for g in genre_metrics if 'NDCG@%d' % k in genre_metrics[g]]
+        
+        # Compute overall recall and NDCG for the current k
         if recall_list:
-            overall_metrics['Recall@%d' % k] = sum(recall_list) / len(recall_list)
+            overall_metrics['Recall@%d' % k] = sum(recall_list) / len(recall_list) # Average recall across genres
+        
+        # Compute overall NDCG for the current k
         if ndcg_list:
-            overall_metrics['NDCG@%d' % k] = sum(ndcg_list) / len(ndcg_list)
-    genre_metrics['Overall'] = overall_metrics
+            overall_metrics['NDCG@%d' % k] = sum(ndcg_list) / len(ndcg_list) # Average NDCG across genres
+
+    genre_metrics['Overall'] = overall_metrics # Add overall metrics to the genre metrics dictionary
     return genre_metrics
+
+###############################################################################
+# End of newly added code
+###############################################################################

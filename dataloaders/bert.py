@@ -55,16 +55,20 @@ class BertDataloader(AbstractDataloader):
         # Create BertTrainDataset with sid2genre
         ###########################################################################
         # sid2genre should be available in self or constructed from dataset
-        sid2genre = getattr(self, 'sid2genre', None)
+        sid2genre = getattr(self, 'sid2genre', None) # Try to get sid2genre attribute from self
+        # If sid2genre is not found
         if sid2genre is None:
-            if hasattr(self, 'dataset') and hasattr(self.dataset, 'sid2genre'):
-                sid2genre = self.dataset.sid2genre
-            else:
+            # Check if dataset has sid2genre
+            if hasattr(self, 'dataset') and hasattr(self.dataset, 'sid2genre'): 
+                sid2genre = self.dataset.sid2genre # Use sid2genre from dataset
+                # If sid2genre is not available in dataset
+            else: 
                 # fallback: create a dummy mapping (all genres 0)
-                all_sids = set()
-                for user_seq in self.train.values():
-                    all_sids.update(user_seq)
-                sid2genre = {sid: 0 for sid in all_sids}
+                all_sids = set() # Initialize a set to collect all sids
+                # Iterate over all user sequences in training data
+                for user_seq in self.train.values(): 
+                    all_sids.update(user_seq) # Add all sids from user_seq to all_sids set
+                sid2genre = {sid: 0 for sid in all_sids} # Map each sid to genre 0 (dummy mapping)
                 ###########################################################################
                 # End of newly added code
                 ###########################################################################
@@ -89,16 +93,19 @@ class BertDataloader(AbstractDataloader):
         ###########################################################################
         # Create BertEvalDataset with sid2genre
         ###########################################################################
-        sid2genre = getattr(self, 'sid2genre', None)
+        sid2genre = getattr(self, 'sid2genre', None) # Try to get sid2genre attribute from self
+        # If sid2genre is not found
         if sid2genre is None:
+            # Check if dataset has sid2genre
             if hasattr(self, 'dataset') and hasattr(self.dataset, 'sid2genre'):
-                sid2genre = self.dataset.sid2genre
+                sid2genre = self.dataset.sid2genre # Use sid2genre from dataset
             else:
                 # fallback: create a dummy mapping (all genres 0)
-                all_sids = set()
+                all_sids = set() # Initialize a set to collect all sids
+                # Iterate over all user sequences in training data
                 for user_seq in self.train.values():
-                    all_sids.update(user_seq)
-                sid2genre = {sid: 0 for sid in all_sids}
+                    all_sids.update(user_seq) # Add all sids from user_seq to all_sids set
+                sid2genre = {sid: 0 for sid in all_sids} # Map each sid to genre 0 (dummy mapping)
                 ###########################################################################
                 # End of newly added code
                 ###########################################################################
