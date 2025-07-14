@@ -70,7 +70,7 @@ with col2:
 
 interaction_seq = st.text_input(
     "Interaction Sequence (comma-separated Movie IDs)",
-    value="9,23,66,188,317",
+    value="1826, 2296, 1605, 925, 1754",
     key="interaction_seq",
 )
 
@@ -132,17 +132,16 @@ if st.button("Get Recommendations"):
         st.error(f"Invalid interaction sequence: {e}")
         st.stop()
 
-    # 2) Run model calls
+    # 2) Run model calls for selected genres
     _ = predict_user_genre_top5(
         user_id, movie_id, interaction_seq_list, genre_inputs
     )
-    top5_genres = predict_top5_genres(user_id, interaction_seq_list)
 
-    # 3) Capture raw two-line output
+    # 3) Capture raw two-line output for selected genres
     buf = io.StringIO()
     old_stdout = sys.stdout
     sys.stdout = buf
-    predict_top5_per_genre(user_id, interaction_seq_list, top5_genres)
+    predict_top5_per_genre(user_id, interaction_seq_list, genre_inputs)
     sys.stdout = old_stdout
 
     raw_lines = buf.getvalue().strip().splitlines()

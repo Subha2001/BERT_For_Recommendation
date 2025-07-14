@@ -201,52 +201,17 @@ if __name__ == "__main__":
     # Example usage with genre names
     user_id = 100
     movie_id = 400
-    interaction_seq = [250, 250, 305, 45, 55]  # Example sequence
-    genre = ['Western', 'Horror', 'Crime', 'Comedy', 'Action']  # Example genre sequence (as names)
+    interaction_seq = [1826, 2296, 1605, 925, 1754]  # Example sequence
+    genre = ['Action', 'Adventure', 'Western', 'Sci-Fi', 'Mystery'] # Example genre sequence (as names)
     result = predict_user_genre_top5(user_id, movie_id, interaction_seq, genre)
-    print("User ID:", result[0])
+
+    print("User ID:", user_id)
     print("Movie ID:", movie_id)
-    print("Genre:", result[1])
+    print("Interaction Sequence:", interaction_seq)
+    print("Input Genre:", genre)
+    print()
     print("Top 5 Movie IDs:", result[2])
 
-    # Predict top 5 genres for the user, then recommend top 5 movies for each
-    top5_genres = predict_top5_genres(user_id, interaction_seq)
-    print("Predicted Top 5 Genres:", [genre_id_to_name[g] for g in top5_genres])
-    predict_top5_per_genre(user_id, interaction_seq, top5_genres)
-
-    # ===== Debugging: Check if genre input affects model output =====
-    print("\n[DEBUG] Checking if genre input affects model output...")
-    genre_test_1 = ['Action', 'Adventure', 'Western', 'Sci-Fi', 'Mystery']
-    genre_test_2 = ['Comedy', 'Drama', 'Romance', 'War', 'Horror']
-    result_test_1 = predict_user_genre_top5(user_id, movie_id, interaction_seq, genre_test_1)
-    result_test_2 = predict_user_genre_top5(user_id, movie_id, interaction_seq, genre_test_2)
-    print(f"Genre 1: {genre_test_1}\nTop 5 Movie IDs: {result_test_1[2]}")
-    print(f"Genre 2: {genre_test_2}\nTop 5 Movie IDs: {result_test_2[2]}")
-    print(result_test_1)
-    print(result_test_2)
-    if result_test_1[2] != result_test_2[2]:
-        print("[RESULT] Model output changes with genre input. Genre embedding is working.")
-    else:
-        print("[RESULT] Model output does NOT change with genre input. Check training and genre embedding.")
-
-    # ===== Debugging: Print genre embedding weights =====
-    print("\n[DEBUG] Inspecting genre embedding weights in loaded model...")
-    model = load_model('downloaded_model/best_acc_model.pth')
-    genre_emb = None
-    try:
-        genre_emb = model.embedding.genre
-    except AttributeError:
-        print("No genre embedding found in model.")
-    if genre_emb is None:
-        print("Genre embedding is not initialized.")
-    else:
-        weights = genre_emb.weight.detach().cpu().numpy()
-        print("Genre embedding weights shape:", weights.shape)
-        print("First 5 genre embedding vectors:")
-        print(weights[:5])
-        print("Mean of genre embedding weights:", weights.mean())
-        print("Std of genre embedding weights:", weights.std())
-        if abs(weights.mean()) < 1e-3 and weights.std() < 1e-3:
-            print("WARNING: Genre embedding weights are nearly zero. Model will ignore genre input.")
-        else:
-            print("Genre embedding weights are non-trivial.")
+    # Show multi-genre output using predict_top5_per_genre
+    print("\n=== Output Table ===")
+    predict_top5_per_genre(user_id, interaction_seq, genre)
