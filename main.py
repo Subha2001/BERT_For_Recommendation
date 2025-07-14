@@ -34,6 +34,18 @@ def train():
     ######################################################################
     train_loader, val_loader, test_loader = dataloader_factory(args)
     model = model_factory(args)
+
+    # ===== Debug: Print a sample batch from train_loader to verify genre tensor =====
+    print("\n[DEBUG] Printing a sample batch from train_loader...")
+    sample_batch = next(iter(train_loader))
+    if len(sample_batch) == 3:
+        seqs, labels, genres = sample_batch
+        print("Sample sequence tensor:", seqs[0])
+        print("Sample label tensor:", labels[0])
+        print("Sample genre tensor:", genres[0])
+    else:
+        print("Sample batch does not contain genre tensor. Batch contents:", sample_batch)
+
     trainer = trainer_factory(args, model, train_loader, val_loader, test_loader, export_root)
     trainer.train()
 
