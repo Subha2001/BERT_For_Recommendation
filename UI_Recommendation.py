@@ -3,11 +3,7 @@ import numpy as np
 import pandas as pd
 import re, io, sys
 
-from prediction import (
-    predict_user_genre_top5,
-    predict_top5_genres,
-    predict_top5_per_genre,
-    genre_name_to_id)
+from prediction import (predict_top5_per_genre, genre_name_to_id)
 
 # ─── Style ────────────────────────────────────────────────────────────────────
 st.markdown(
@@ -132,12 +128,7 @@ if st.button("Get Recommendations"):
         st.error(f"Invalid interaction sequence: {e}")
         st.stop()
 
-    # 2) Run model calls for selected genres
-    _ = predict_user_genre_top5(
-        user_id, movie_id, interaction_seq_list, genre_inputs
-    )
-
-    # 3) Capture raw two-line output for selected genres
+    # 2) Capture raw two-line output for selected genres
     buf = io.StringIO()
     old_stdout = sys.stdout
     sys.stdout = buf
@@ -149,7 +140,7 @@ if st.button("Get Recommendations"):
         st.error("No data returned from predict_top5_per_genre()")
         st.stop()
 
-    # 4) Parse into DataFrame
+    # 3) Parse into DataFrame
     text_block = "\n".join(raw_lines[:2])
     try:
         df = parse_genre_table(text_block)
@@ -157,11 +148,11 @@ if st.button("Get Recommendations"):
         st.error(f"Failed to parse recommendations table: {e}")
         st.stop()
 
-    # 5) Insert Rank and render
+    # 4) Insert Rank and render
     df.insert(0, "Rank", range(1, len(df) + 1))
     st.subheader(":sparkles: Recommendation Table")
     st.table(df)
 
-    # 6) Optional raw output
+    # 5) Optional raw output
     st.subheader(":page_facing_up: Raw Output")
     st.text("\n".join(raw_lines))
