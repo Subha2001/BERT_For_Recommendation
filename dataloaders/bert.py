@@ -116,6 +116,10 @@ class BertTrainDataset(data_utils.Dataset):
         self.mask_token = mask_token
         self.num_items = num_items
         self.rng = rng
+        # Check for all-zero genre sequences (warn user)
+        all_genres = [self.sid2genre.get(s, 0) for user in self.users for s in self._getseq(user)]
+        if all(g == 0 for g in all_genres):
+            print("[WARNING] All genre sequences are zero. Model will not learn genre information.")
 
     def __len__(self):
         return len(self.users)

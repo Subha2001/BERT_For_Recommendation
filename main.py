@@ -25,6 +25,7 @@ def train():
     genre_ids = list(dataset.sid2genre.values())
     max_genre_id = max(genre_ids)
     args.num_genres = max_genre_id + 1
+    print(f"[INFO] num_genres set to {args.num_genres}")
     genre_counts = {}
     for g in genre_ids:
         genre_counts[g] = genre_counts.get(g, 0) + 1

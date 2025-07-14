@@ -28,6 +28,7 @@ class BERTTrainer(AbstractTrainer):
         # Made changes in Calculate loss for BERT model
         ##############################################################################
         # Support genre input: batch = (seqs, labels, genres) or (seqs, labels)
+        # NOTE: Model will use genre information only if genre input is meaningful and genre embedding exists
         if len(batch) == 3:
             seqs, labels, genres = batch  # Updated newly
             seqs = seqs.to(self.device)

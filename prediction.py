@@ -213,3 +213,32 @@ if __name__ == "__main__":
     top5_genres = predict_top5_genres(user_id, interaction_seq)
     print("Predicted Top 5 Genres:", [genre_id_to_name[g] for g in top5_genres])
     predict_top5_per_genre(user_id, interaction_seq, top5_genres)
+
+# =====================
+# Checklist for Genre-aware Model Training
+# =====================
+# 1. Set num_genres in your training arguments/config:
+#    args.num_genres = 19  # 18 genres + 1 for padding (0)
+#
+# 2. Ensure your dataloader passes a meaningful genre sequence:
+#    # Example for BertTrainDataset
+#    # genres = [sid2genre.get(s, 0) for s in seq]
+#    # Do not use all zeros!
+#
+# 3. Confirm your model architecture includes genre embedding:
+#    # In BERTEmbedding, genre embedding should be created and added if num_genres is set.
+#
+# 4. Pass genre sequence to model during training and inference:
+#    # logits = model(seq_tensor, genre_tensor)
+#
+# 5. Validate after training that genre changes affect output:
+#    # Try different genre sequences and check predictions.
+# =====================
+
+# Example code snippet for training loop:
+# for batch in train_loader:
+#     seqs, labels, genres = batch
+#     logits = model(seqs, genres)
+#     loss = criterion(logits, labels)
+#     loss.backward()
+#     optimizer.step()

@@ -43,7 +43,7 @@ class BERTEmbedding(nn.Module):
         ####################################################################################
         # If genre is provided and genre embedding exists, add genre embedding to the output
         # This allows for the addition of genre information to the sequence embedding
-        ####################################################################################
+        # NOTE: genre embedding will only affect output if genre input is meaningful and num_genres is set
         if self.genre is not None and genre is not None:
             x = x + self.genre(genre)
         return self.dropout(x)
