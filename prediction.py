@@ -201,17 +201,15 @@ if __name__ == "__main__":
     # Example usage with genre names
     user_id = 100
     movie_id = 400
-    interaction_seq = [1826, 2296, 1605, 925, 1754]  # Example sequence
-    genre = ['Action', 'Adventure', 'Western', 'Sci-Fi', 'Mystery'] # Example genre sequence (as names)
+    interaction_seq = [250, 250, 305, 45, 55]  # Example sequence
+    genre = ['Action', 'Crime', 'Western', 'Sci-Fi', 'Adventure']  # Example genre sequence (as names)
     result = predict_user_genre_top5(user_id, movie_id, interaction_seq, genre)
-
-    print("User ID:", user_id)
+    print("User ID:", result[0])
     print("Movie ID:", movie_id)
-    print("Interaction Sequence:", interaction_seq)
-    print("Input Genre:", genre)
-    print()
+    print("Genre:", result[1])
     print("Top 5 Movie IDs:", result[2])
 
-    # Show multi-genre output using predict_top5_per_genre
-    print("\n=== Output Table ===")
-    predict_top5_per_genre(user_id, interaction_seq, genre)
+    # Predict top 5 genres for the user, then recommend top 5 movies for each
+    top5_genres = predict_top5_genres(user_id, interaction_seq)
+    print("Predicted Top 5 Genres:", [genre_id_to_name[g] for g in top5_genres])
+    predict_top5_per_genre(user_id, interaction_seq, top5_genres)
